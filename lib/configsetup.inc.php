@@ -219,6 +219,11 @@ return [
             'name' => 'dev[reload_on_error]',
             'value' => $config['dev']['reload_on_error'],
         ],
+        'webserver_url' => [
+            'type' => 'hidden',
+            'name' => 'webserver[url]',
+            'value' => $config['webserver']['url'],
+        ],
         'webserver_ssid' => [
             'view' => 'expert',
             'type' => 'input',
