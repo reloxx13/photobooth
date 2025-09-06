@@ -1129,7 +1129,7 @@ class PhotoboothConfiguration implements ConfigurationInterface
             ->defaultValue('Photobooth')
             ->end()
             ->scalarNode('url')
-                    ->defaultValue(trim('http://' . Environment::getIp() . $assetService->getUrl('')))
+                    ->defaultValue('http://' . trim(Environment::getIp()) . $assetService->getUrl(''))
             ->end()
             ->end();
     }
