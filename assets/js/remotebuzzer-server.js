@@ -205,7 +205,7 @@ const requestListener = function (req, res) {
         res.end(content);
     }
 
-    const urlObj = new URL(req.url, config.webserver.ip); //The consctructor requires to input a base url
+    const urlObj = new URL(req.url, 'http://' + config.webserver.ip);
     const queryParams = urlObj.searchParams;
 
     switch (urlObj.pathname) {
