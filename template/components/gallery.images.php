@@ -64,7 +64,7 @@ if (empty($imagelist)) {
                 echo ' data-med="' . PathUtility::getPublicPath($filename_thumb) . '" data-med-size="' . $imageinfoThumb['width'] . 'x' . $imageinfoThumb['height'] . '">';
                 echo '<figure>';
                 echo '<img src="' . PathUtility::getPublicPath($filename_thumb) . '" alt="' . $image . '" loading="lazy"';
-                if ($imageinfo[1] > $imageinfo[0]) {
+                if ($imageinfo['height'] > $imageinfo['width']) {
                     echo 'style="padding-left: 25%;padding-right: 25%;"';
                 }
                 echo ' />';
