@@ -2,7 +2,6 @@
 
 namespace Photobooth\Service;
 
-use Photobooth\Enum\FolderEnum;
 use Photobooth\Utility\PathUtility;
 
 class ThemeService

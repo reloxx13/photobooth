@@ -9,7 +9,7 @@ header('Content-Type: application/json');
 $themeService = ThemeService::getInstance();
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-$query = $_GET ?? [];
+$query = $_GET;
 
 if ($method === 'GET') {
     $action = $query['action'] ?? 'list';
@@ -103,4 +103,3 @@ echo json_encode([
     'message' => 'Unknown action',
 ]);
 exit();
-
