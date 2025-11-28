@@ -97,7 +97,7 @@ class ConfigurationService
             $config['collage']['limit'] = 4;
         }
 
-        $bg_url = PathUtility::getPublicPath('resources/img/background.png');
+        $bg_path = 'resources/img/background.png';
         $logo_url = PathUtility::getPublicPath('resources/img/logo/logo-qrcode-text.png');
 
         if (empty($config['logo']['path'])) {
@@ -105,15 +105,15 @@ class ConfigurationService
         }
 
         if (empty($config['background']['defaults'])) {
-            $config['background']['defaults'] = 'url(' . $bg_url . ')';
+            $config['background']['defaults'] = $bg_path;
         }
 
         if (empty($config['background']['admin'])) {
-            $config['background']['admin'] = 'url(' . $bg_url . ')';
+            $config['background']['admin'] = $bg_path;
         }
 
         if (empty($config['background']['chroma'])) {
-            $config['background']['chroma'] = 'url(' . $bg_url . ')';
+            $config['background']['chroma'] = $bg_path;
         }
 
         if (empty($config['remotebuzzer']['serverip'])) {
@@ -159,6 +159,43 @@ class ConfigurationService
         // Migrate Preview Mode
         if (isset($config['preview']['mode']) && $config['preview']['mode'] === 'gphoto') {
             $config['preview']['mode'] = 'device_cam';
+        }
+
+        // Migrate Preview URL
+        if (isset($config['preview']['url']) && substr($config['preview']['url'], 0, 4) === 'url(' && substr($config['preview']['url'], -1) === ')') {
+            $config['preview']['url'] = trim(substr($config['preview']['url'], 4, -1), '"\'');
+        }
+
+        // Migrate Background URLs
+        if (isset($config['background']) && is_array($config['background'])) {
+            $baseUrl = PathUtility::getBaseUrl();
+            foreach (['defaults', 'admin', 'chroma'] as $backgroundKey) {
+                if (!isset($config['background'][$backgroundKey]) || $config['background'][$backgroundKey] === '') {
+                    continue;
+                }
+
+                $value = (string)$config['background'][$backgroundKey];
+
+                // Strip surrounding url("...") / url('...') / url(...)
+                if (substr($value, 0, 4) === 'url(' && substr($value, -1) === ')') {
+                    $value = trim(substr($value, 4, -1), '"\'');
+                }
+
+                // Strip document root based absolute paths
+                if (isset($_SERVER['DOCUMENT_ROOT']) && str_starts_with($value, $_SERVER['DOCUMENT_ROOT'])) {
+                    $value = substr($value, strlen($_SERVER['DOCUMENT_ROOT']));
+                }
+
+                // Strip leading base URL so only a relative path is stored
+                if ($baseUrl !== '' && str_starts_with($value, $baseUrl)) {
+                    $value = substr($value, strlen($baseUrl));
+                }
+
+                // Normalize leading slash
+                $value = ltrim($value, '/');
+
+                $config['background'][$backgroundKey] = $value;
+            }
         }
 
         return $config;
