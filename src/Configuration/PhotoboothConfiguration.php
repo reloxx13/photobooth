@@ -1537,4 +1537,13 @@ class PhotoboothConfiguration implements ConfigurationInterface
                 ->scalarNode('current')->defaultValue('')->end()
             ->end();
     }
+
+    protected function addTheme(): NodeDefinition
+    {
+        return (new TreeBuilder('theme'))->getRootNode()->addDefaultsIfNotSet()
+            ->ignoreExtraKeys()
+            ->children()
+                ->scalarNode('current')->defaultValue('')->end()
+            ->end();
+    }
 }
