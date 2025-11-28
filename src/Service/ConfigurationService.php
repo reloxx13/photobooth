@@ -129,6 +129,58 @@ class ConfigurationService
 
     protected function processMigration(array $config): array
     {
+        // Normalize legacy paths that may contain absolute URLs or subfolder prefixes (e.g. /photobooth/)
+        $baseUrl  = PathUtility::getBaseUrl();
+        $hostBase = '';
+        if (isset($_SERVER['HTTP_HOST'])) {
+            $scheme   = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off') ? 'https' : 'http';
+            $hostBase = $scheme . '://' . $_SERVER['HTTP_HOST'] . $baseUrl;
+        }
+
+        $normalizePath = static function (?string $path) use ($baseUrl, $hostBase): ?string {
+            if ($path === null || $path === '') {
+                return $path;
+            }
+
+            $value = (string)$path;
+
+            // Strip surrounding url("...") / url('...') / url(...)
+            if (substr($value, 0, 4) === 'url(' && substr($value, -1) === ')') {
+                $value = trim(substr($value, 4, -1), '"\'');
+            }
+
+            // Strip project root based absolute paths
+            try {
+                $rootPath = PathUtility::getRootPath();
+                if (str_starts_with($value, $rootPath)) {
+                    $value = substr($value, strlen($rootPath));
+                }
+            } catch (\InvalidArgumentException) {
+                // ignore if root path can't be resolved in this context
+            }
+
+            // Remove full host+base prefix, e.g. "https://host/photobooth/"
+            if ($hostBase !== '' && str_starts_with($value, $hostBase)) {
+                $value = substr($value, strlen($hostBase));
+            }
+
+            // Remove base URL prefix, e.g. "/photobooth/"
+            if ($baseUrl !== '' && str_starts_with($value, $baseUrl)) {
+                $value = substr($value, strlen($baseUrl));
+            }
+
+            // If path still contains a known project-relative marker, strip everything before it
+            foreach (['/private/', '/resources/'] as $marker) {
+                $pos = strpos($value, $marker);
+                if ($pos !== false) {
+                    $value = substr($value, $pos);
+                    break;
+                }
+            }
+
+            return $value;
+        };
+
         // Migrate Commands
         $commands = [
             'take_picture',
