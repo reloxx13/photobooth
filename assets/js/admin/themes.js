@@ -158,7 +158,7 @@ $(function () {
             elements.forEach((el) => {
                 const $el = $(el);
                 const name = $el.attr('name');
-                if (!name || !Object.prototype.hasOwnProperty.call(theme, name)) {
+                if (!name) {
                     return;
                 }
 
