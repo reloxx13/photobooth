@@ -149,7 +149,7 @@ class PathUtility
      */
     public static function getBaseUrl(): string
     {
-        $documentRoot = realpath($_SERVER['DOCUMENT_ROOT']) . DIRECTORY_SEPARATOR;
+        $documentRoot = realpath($_SERVER['DOCUMENT_ROOT']);
         $rootPath = self::getRootPath();
 
         return self::fixFilePath(str_replace($documentRoot, '', $rootPath) . '/');
