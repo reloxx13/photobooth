@@ -25,10 +25,10 @@ final class PathUtilityTest extends TestCase
         $rootPath = realpath(__DIR__ . '/../../../');
 
         return [
-            ['data', $rootPath . DIRECTORY_SEPARATOR . 'data'],
-            ['template/classic.template.php', $rootPath . DIRECTORY_SEPARATOR . 'template' . DIRECTORY_SEPARATOR . 'classic.template.php'],
-            ['/images', $rootPath . DIRECTORY_SEPARATOR . 'images'],
-            ['/invalid-path', $rootPath . DIRECTORY_SEPARATOR . 'invalid-path']
+            ['data', $rootPath . 'data'],
+            ['template/classic.template.php', $rootPath . 'template' . DIRECTORY_SEPARATOR . 'classic.template.php'],
+            ['/images', $rootPath . 'images'],
+            ['/invalid-path', $rootPath . 'invalid-path'],
         ];
     }
 
