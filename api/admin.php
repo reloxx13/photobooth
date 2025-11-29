@@ -123,7 +123,6 @@ if ($action === 'reset') {
     $logger->debug('Saving Photobooth configuration...');
     $newConfig = ArrayUtility::mergeRecursive($defaultConfig, $data);
 
-
     $rootPath = PathUtility::getRootPath();
 
     $normalizePath = static function (?string $path) use ($rootPath): ?string {

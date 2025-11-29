@@ -18,7 +18,7 @@ class PathUtility
      *
      * @var string|null
      */
-    static $rootPathCache = null;
+    public static $rootPathCache = null;
 
     /**
      * Returns the absolute filesystem path to the project root directory.
@@ -33,7 +33,7 @@ class PathUtility
         if (self::$rootPathCache === null) {
             self::$rootPathCache = realpath(__DIR__ . '/../../') . DIRECTORY_SEPARATOR;
         }
-        if (self::$rootPathCache === false) {
+        if (!self::$rootPathCache) {
             throw new InvalidArgumentException('Rootpath could not be resolved.');
         }
 
