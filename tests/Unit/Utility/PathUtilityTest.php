@@ -10,7 +10,7 @@ final class PathUtilityTest extends TestCase
 {
     public function testGetRootPath(): void
     {
-        $expected = realpath(__DIR__ . '/../../../');
+        $expected = realpath(__DIR__ . '/../../../') . DIRECTORY_SEPARATOR;
         $this->assertSame($expected, PathUtility::getRootPath());
     }
 

@@ -64,13 +64,13 @@ class PathUtility
             return $path;
         }
 
-        $absolutePath = $documentRoot . DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR);
+        $absolutePath = $documentRoot . ltrim($path, DIRECTORY_SEPARATOR);
         $absolutePath = preg_replace('#' . DIRECTORY_SEPARATOR . '+#', DIRECTORY_SEPARATOR, (string) realpath($absolutePath));
         if ($absolutePath && strpos($absolutePath, $documentRoot) === 0) {
             return $absolutePath;
         }
 
-        return $documentRoot . DIRECTORY_SEPARATOR . ltrim($path, DIRECTORY_SEPARATOR);
+        return $documentRoot . ltrim($path, DIRECTORY_SEPARATOR);
     }
 
     /**
@@ -149,8 +149,9 @@ class PathUtility
      */
     public static function getBaseUrl(): string
     {
-        $documentRoot = (string) realpath($_SERVER['DOCUMENT_ROOT']);
+        $documentRoot = realpath($_SERVER['DOCUMENT_ROOT']) . DIRECTORY_SEPARATOR;
         $rootPath = self::getRootPath();
+
         return self::fixFilePath(str_replace($documentRoot, '', $rootPath) . '/');
     }
 
