@@ -250,6 +250,20 @@ class ConfigurationService
             }
         }
 
+        // Normalize various media and font paths to be project-relative
+        $config['logo']['path']               = $normalizePath($config['logo']['path'] ?? null);
+        $config['ui']['shutter_cheese_img']   = $normalizePath($config['ui']['shutter_cheese_img'] ?? null);
+        $config['picture']['frame']           = $normalizePath($config['picture']['frame'] ?? null);
+        $config['collage']['frame']           = $normalizePath($config['collage']['frame'] ?? null);
+        $config['collage']['placeholderpath'] = $normalizePath($config['collage']['placeholderpath'] ?? null);
+        $config['background']['defaults']     = $normalizePath($config['background']['defaults'] ?? null);
+        $config['background']['admin']        = $normalizePath($config['background']['admin'] ?? null);
+        $config['background']['chroma']       = $normalizePath($config['background']['chroma'] ?? null);
+        $config['textonpicture']['font']      = $normalizePath($config['textonpicture']['font'] ?? null);
+        $config['textoncollage']['font']      = $normalizePath($config['textoncollage']['font'] ?? null);
+        $config['textonprint']['font']        = $normalizePath($config['textonprint']['font'] ?? null);
+        $config['print']['frame']             = $normalizePath($config['print']['frame'] ?? null);
+
         return $config;
     }
 
