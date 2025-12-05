@@ -428,9 +428,7 @@ class Image
             // Cache image dimensions for gallery/PhotoSwipe performance
             $width = imagesx($sourceResource);
             $height = imagesy($sourceResource);
-            if ($width > 0 && $height > 0) {
-                ImageMetadataCacheService::getInstance()->set($destination, $width, $height);
-            }
+            ImageMetadataCacheService::getInstance()->set($destination, $width, $height);
 
             return true;
         } catch (\Exception $e) {
