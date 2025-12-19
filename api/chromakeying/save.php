@@ -59,7 +59,7 @@ if ($saveCopy) {
                 FolderEnum::KEYING->absolute(),
                 FolderEnum::TEMP->absolute(),
             ];
-            $delete = new FileDelete($_POST['file'], $paths);
+            $delete = new FileDelete($_POST['file'], $paths, $config['picture']['keep_original']);
             $delete->deleteFiles();
             $logger->debug('delete', $delete->getLogData());
         }

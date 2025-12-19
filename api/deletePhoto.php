@@ -59,7 +59,7 @@ $logData = [
 ];
 
 foreach ($filesToDelete as $fileName) {
-    $delete = new FileDelete($fileName, $paths, true);
+    $delete = new FileDelete($fileName, $paths, $config['picture']['keep_original']);
     $delete->deleteFiles();
     $singleLogData = $delete->getLogData();
     $logData['files'][$fileName] = $singleLogData;
