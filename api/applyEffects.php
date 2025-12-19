@@ -148,13 +148,15 @@ try {
 
                     if ($filterResource !== $imageResource) {
                         $imageResource = $filterResource;
-//                        $restored = $imageHandler->resizeImage($filterResource, $originalWidth, $originalHeight);
-//                        if ($restored instanceof \GdImage) {
-//                            if ($filterResource instanceof \GdImage) {
-//                                unset($filterResource);
-//                            }
-//                            $imageResource = $restored;
-//                        }
+                        // Maybe we want this later or configurable, will take some time to process upscale again
+                        // Upscale back to original size
+                        //                        $restored = $imageHandler->resizeImage($filterResource, $originalWidth, $originalHeight);
+                        //                        if ($restored instanceof \GdImage) {
+                        //                            if ($filterResource instanceof \GdImage) {
+                        //                                unset($filterResource);
+                        //                            }
+                        //                            $imageResource = $restored;
+                        //                        }
                     }
                 }
 
