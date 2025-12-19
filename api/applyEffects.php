@@ -147,13 +147,14 @@ try {
                     }
 
                     if ($filterResource !== $imageResource) {
-                        $restored = $imageHandler->resizeImage($filterResource, $originalWidth, $originalHeight);
-                        if ($restored instanceof \GdImage) {
-                            if ($filterResource instanceof \GdImage) {
-                                unset($filterResource);
-                            }
-                            $imageResource = $restored;
-                        }
+                        $imageResource = $filterResource;
+//                        $restored = $imageHandler->resizeImage($filterResource, $originalWidth, $originalHeight);
+//                        if ($restored instanceof \GdImage) {
+//                            if ($filterResource instanceof \GdImage) {
+//                                unset($filterResource);
+//                            }
+//                            $imageResource = $restored;
+//                        }
                     }
                 }
 
