@@ -3,6 +3,7 @@
 namespace Photobooth\Utility;
 
 use Photobooth\Enum\Interface\LabelInterface;
+use Photobooth\Service\ApplicationService;
 use Photobooth\Service\LanguageService;
 use Photobooth\Service\ThemeService;
 
@@ -40,7 +41,7 @@ class AdminInput
         return self::renderHeadline($label) . '
             <input
                 class="w-full h-10 border-2 border-solid border-gray-300 focus:border-brand-1 rounded-md px-3 mt-auto"
-                type="' . ($setting['type'] === 'number' ? 'number' : 'text') . '"
+                type="' . $setting['type'] . '"
                 name="' . $setting['name'] . '"
                 value="' . $setting['value'] . '"
                 placeholder="' . $setting['placeholder'] . '"
@@ -52,6 +53,15 @@ class AdminInput
     public static function renderHidden(array $setting): string
     {
         return '<input type="hidden" name="' . $setting['name'] . '" value="' . $setting['value'] . '"/>';
+    }
+
+    public static function renderInfo(array $setting, string $label): string
+    {
+        $value = htmlspecialchars((string) ($setting['value'] ?? ''), ENT_QUOTES);
+
+        return self::renderHeadline($label) . '
+            <div class="mt-auto font-mono text-sm text-brand-1 break-all">' . $value . '</div>
+        ';
     }
 
     public static function renderCta(string $label, string $btnId = '', ?array $config = null): string
@@ -79,14 +89,16 @@ class AdminInput
     public static function renderButton(array $setting, string $label, string $key, ?array $config = null): string
     {
         $btn = self::renderCta($setting['placeholder'], $setting['value'], $config);
-        $test = '';
+        $info = '';
         switch ($key) {
             case 'check_version':
-                $test = '
-                    <table id="version_text_table">
+                $languageService = LanguageService::getInstance();
+                $currentVersion = ApplicationService::getInstance()->getVersion();
+                $info = '
+                    <table id="version_text_table" class="mb-2">
                         <tr>
-                            <td><span id="current_version_text"></span></td>
-                            <td><span id="current_version"></span></td>
+                            <td><span id="current_version_text">' . $languageService->translate('current_version') . '</span></td>
+                            <td><span id="current_version">' . $currentVersion . '</span></td>
                         </tr>
                         <tr>
                             <td><span id="available_version_text"></span></td>
@@ -99,11 +111,11 @@ class AdminInput
                 break;
         }
 
-        return self::renderHeadline($label) . '
-            <div class="w-full flex flex-col mt-auto">
+        return self::renderHeadline($label) .
+            $info . '
+            <div class="w-full flex flex-col">
                 ' . $btn . '
             </div>
-            ' . $test . '
         ';
     }
 
@@ -113,10 +125,12 @@ class AdminInput
         $checkboxClasses =
             "w-11 h-6 bg-gray-200 peer-focus:outline-hidden peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600";
         $init = $setting['value'];
+        $note = $setting['note'] ?? '';
 
         $attributes = self::buildAttributes($setting);
 
-        return self::renderHeadline($label) . '
+        return self::renderHeadline($label)
+            . ($note !== '' ? '<div class="mt-2 text-xs text-gray-600 mb-2">' . htmlspecialchars((string) $note, ENT_QUOTES) . '</div>' : '') . '
             <label class="adminCheckbox relative inline-flex items-center cursor-pointer mt-auto">
                 <input type="hidden" name="' . $setting['name'] . '" value="false" />
                 <input class="hidden peer" type="checkbox" ' . ($setting['value'] == 'true' ? ' checked="checked"' : '') . ' name="' . $setting['name'] . '" value="true" ' . $attributes . ' />
@@ -131,11 +145,10 @@ class AdminInput
 
     public static function renderColor(array $setting, string $label): string
     {
-        $languageService = LanguageService::getInstance();
         $attributes = self::buildAttributes($setting);
 
         return '
-            <label class="mb-3">' . $languageService->translate($label) . '</label>
+            <label class="mb-3">' . self::renderHeadline($label) . '</label>
             <input
                 class="w-full h-10 border-2 border-gray-300 border-solid rounded-lg overflow-hidden p-1 mt-auto"
                 type="color"
@@ -292,6 +305,9 @@ class AdminInput
         }
 
         $hiddenPreview = '';
+        if (empty($setting['value'])) {
+            $hiddenPreview = 'hidden';
+        }
         if (str_starts_with($setting['value'], 'http')) {
             $hiddenPreview = 'hidden';
         }
@@ -303,7 +319,7 @@ class AdminInput
             <div class="adminImageSelection group">
                 <div class="w-full flex items-start">
                     <div class="w-24 flex mb-3 mr-3 shrink-0 cursor-pointer ' . $hiddenPreview . '" onclick="openAdminImageSelect(this)">
-                        <img class="adminImageSelection-preview object-contain border border-brand-1  hover:shadow-lg" src="' . $selectedImagePublic . '">
+                        <img class="adminImageSelection-preview object-contain border border-brand-1 hover:shadow-lg" src="' . $selectedImagePublic . '">
                     </div>
                     <div class="w-full flex flex-col">
                         ' . self::renderHeadline($label) . '

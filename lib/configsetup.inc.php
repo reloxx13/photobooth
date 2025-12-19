@@ -5,8 +5,10 @@ use Photobooth\Enum\ImageFilterEnum;
 use Photobooth\Enum\MailSecurityTypeEnum;
 use Photobooth\Enum\RemoteStorageTypeEnum;
 use Photobooth\Enum\TimezoneEnum;
+use Photobooth\Service\ApplicationService;
 use Photobooth\Service\ConfigurationService;
 use Photobooth\Service\LanguageService;
+use Photobooth\Service\PrintManagerService;
 use Photobooth\Utility\PathUtility;
 
 /*
@@ -80,6 +82,29 @@ use Photobooth\Utility\PathUtility;
 $configurationService = ConfigurationService::getInstance();
 $defaultConfig = $configurationService->getDefaultConfiguration();
 $config = $configurationService->getConfiguration();
+$appVersion = ApplicationService::getInstance()->getVersion();
+
+$mediaCounts = [
+    'original' => PathUtility::countFilesInDirectory(PathUtility::getAbsolutePath('data/tmp')),
+    'deleted' => PathUtility::countFilesInDirectory(PathUtility::getAbsolutePath('data/tmp/deleted')),
+    'framed' => PathUtility::countFilesInDirectory(PathUtility::getAbsolutePath('data/images')),
+    'printed' => PathUtility::countFilesInDirectory(PathUtility::getAbsolutePath('data/print')),
+    'videos' => PathUtility::countFilesInDirectory(PathUtility::getAbsolutePath('private/videos')),
+];
+$mailAddressesCount = 0;
+$mailDb = PathUtility::getAbsolutePath('data/mail_addresses.json');
+if (is_file($mailDb)) {
+    $mailRaw = file_get_contents($mailDb);
+    if ($mailRaw !== false) {
+        $mailDecoded = json_decode($mailRaw, true);
+        if (is_array($mailDecoded)) {
+            $mailAddressesCount = count($mailDecoded);
+        }
+    }
+}
+$printManager = PrintManagerService::getInstance();
+$printDbCount = $printManager->getPrintCountFromDB() ?? 0;
+$languageService = LanguageService::getInstance();
 
 return [
     'general' => [
@@ -1101,11 +1126,13 @@ return [
             'view' => 'basic',
             'type' => 'checkbox',
             'name' => 'rembg[enabled]',
+            'data-theme-field' => 'true',
             'value' => $config['rembg']['enabled'],
         ],
         'rembg_background' => [
             'view' => 'basic',
             'type' => 'image',
+            'data-theme-field' => 'true',
             'placeholder' => $defaultConfig['rembg']['background'],
             'name' => 'rembg[background]',
             'value' => htmlentities($config['rembg']['background'] ?? ''),
@@ -1134,11 +1161,13 @@ return [
             'view' => 'advanced',
             'type' => 'checkbox',
             'name' => 'rembg[alpha_matting]',
+            'data-theme-field' => 'true',
             'value' => $config['rembg']['alpha_matting'],
         ],
         'rembg_alpha_matting_foreground_threshold' => [
             'view' => 'expert',
             'type' => 'range',
+            'data-theme-field' => 'true',
             'placeholder' => $defaultConfig['rembg']['alpha_matting_foreground_threshold'],
             'name' => 'rembg[alpha_matting_foreground_threshold]',
             'value' => $config['rembg']['alpha_matting_foreground_threshold'],
@@ -1150,6 +1179,7 @@ return [
         'rembg_alpha_matting_background_threshold' => [
             'view' => 'expert',
             'type' => 'range',
+            'data-theme-field' => 'true',
             'placeholder' => $defaultConfig['rembg']['alpha_matting_background_threshold'],
             'name' => 'rembg[alpha_matting_background_threshold]',
             'value' => $config['rembg']['alpha_matting_background_threshold'],
@@ -1161,6 +1191,7 @@ return [
         'rembg_alpha_matting_erode_size' => [
             'view' => 'expert',
             'type' => 'range',
+            'data-theme-field' => 'true',
             'placeholder' => $defaultConfig['rembg']['alpha_matting_erode_size'],
             'name' => 'rembg[alpha_matting_erode_size]',
             'value' => $config['rembg']['alpha_matting_erode_size'],
@@ -3307,23 +3338,33 @@ return [
             'type' => 'checkbox',
             'name' => 'reset[remove_media]',
             'value' => false,
+            'note' => sprintf(
+                $languageService->translate('reset:media_counts'),
+                $mediaCounts['original'],
+                $mediaCounts['deleted'],
+                $mediaCounts['framed'],
+                $mediaCounts['printed'],
+                $mediaCounts['videos']
+            ),
         ],
         'reset_remove_mailtxt' => [
             'view' => 'advanced',
             'type' => 'checkbox',
             'name' => 'reset[remove_mail_db]',
             'value' => false,
-        ],
-        'reset_remove_config' => [
-            'view' => 'expert',
-            'type' => 'checkbox',
-            'name' => 'reset[remove_config]',
-            'value' => false,
+            'note' => $languageService->translate('reset:stored_mail_addresses') . ': ' . $mailAddressesCount,
         ],
         'reset_remove_print_db' => [
             'view' => 'expert',
             'type' => 'checkbox',
             'name' => 'reset[remove_print_db]',
+            'value' => false,
+            'note' => $languageService->translate('reset:print_db_entries') . ': ' . $printDbCount,
+        ],
+        'reset_remove_config' => [
+            'view' => 'expert',
+            'type' => 'checkbox',
+            'name' => 'reset[remove_config]',
             'value' => false,
         ],
         'reset_button' => [
