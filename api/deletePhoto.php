@@ -35,9 +35,7 @@ $paths = [
     FolderEnum::KEYING->absolute(),
 ];
 
-if (!$config['picture']['keep_original']) {
-    $paths[] = FolderEnum::TEMP->absolute();
-}
+$paths[] = FolderEnum::TEMP->absolute();
 
 $delete = new FileDelete($file, $paths, true);
 $delete->deleteFiles();
