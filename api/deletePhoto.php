@@ -72,10 +72,6 @@ foreach ($filesToDelete as $fileName) {
         $database->deleteContentFromDB($fileName);
     }
 
-    // Remove cached metadata for this file and its thumb, if present
-    ImageMetadataCacheService::getInstance()->remove(FolderEnum::IMAGES->absolute() . DIRECTORY_SEPARATOR . $fileName);
-    ImageMetadataCacheService::getInstance()->remove(FolderEnum::THUMBS->absolute() . DIRECTORY_SEPARATOR . $fileName);
-
     if ($config['ftp']['enabled'] && $config['ftp']['delete']) {
         $remoteStorage->delete($remoteStorage->getStorageFolder() . '/images/' . $fileName);
         $remoteStorage->delete($remoteStorage->getStorageFolder() . '/thumbs/' . $fileName);
