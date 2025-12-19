@@ -59,6 +59,10 @@ $logData = [
     'files' => [],
 ];
 
+// Remove cached metadata for this file and its thumb, if present
+ImageMetadataCacheService::getInstance()->remove(FolderEnum::IMAGES->absolute() . DIRECTORY_SEPARATOR . $file);
+ImageMetadataCacheService::getInstance()->remove(FolderEnum::THUMBS->absolute() . DIRECTORY_SEPARATOR . $file);
+
 foreach ($filesToDelete as $fileName) {
     $delete = new FileDelete($fileName, $paths, (bool) $config['picture']['keep_original']);
     $delete->deleteFiles();
@@ -72,10 +76,6 @@ foreach ($filesToDelete as $fileName) {
         $database = DatabaseManagerService::getInstance();
         $database->deleteContentFromDB($fileName);
     }
-
-    // Remove cached metadata for this file and its thumb, if present
-    ImageMetadataCacheService::getInstance()->remove(FolderEnum::IMAGES->absolute() . DIRECTORY_SEPARATOR . $fileName);
-    ImageMetadataCacheService::getInstance()->remove(FolderEnum::THUMBS->absolute() . DIRECTORY_SEPARATOR . $fileName);
 
     if ($config['ftp']['enabled'] && $config['ftp']['delete']) {
         $remoteStorage->delete($remoteStorage->getStorageFolder() . '/images/' . $fileName);
