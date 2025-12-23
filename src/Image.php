@@ -1150,48 +1150,70 @@ class Image
     public function effectPolaroid(GdImage $resource): GdImage
     {
         try {
-            // We create a new image
-            $img = imagecreatetruecolor(imagesx($resource) + 25, imagesy($resource) + 80);
-            if (!$img) {
-                throw new \Exception('Cannot create new image.');
+            // Get resolution of the input image
+            $resourceWidth = imagesx($resource);
+            $resourceHeight = imagesy($resource);
+
+            // Determine the shorter side of the original image, used as a reference for border thickness
+            $resourceShortSide = min($resourceWidth, $resourceHeight);
+
+            // Define base border thickness parameters. These could eventually be configurable in the Admin Panel.
+            $borderThinPercentage = 2; // Percentage of the original short side for thin borders (left, right, top)
+            $factorBottomBorder = 6;   // Multiplier for the bottom border thickness relative to the thin borders
+
+            // Calculate actual pixel thickness
+            $borderThinPx = (int) round($borderThinPercentage * $resourceShortSide / 100); // for the thin borders
+            $borderBottomPx = $factorBottomBorder * $borderThinPx; // for the thick bottom border
+
+            // Calculate dimensions for the final Polaroid image.
+            $finalPolaroidWidth = $resourceWidth + (2 * $borderThinPx);
+            // The final Polaroid height is calculated to maintain the original image's aspect ratio (width/height).
+            $finalPolaroidHeight = (int) round($finalPolaroidWidth / ($resourceWidth / $resourceHeight));
+
+            // Calculate the target height for the image *content* within the Polaroid frame.
+            $targetImageContentHeight = $finalPolaroidHeight - $borderThinPx - $borderBottomPx;
+
+            // Error handling: Ensure there is enough vertical space for the image content after borders.
+            if ($targetImageContentHeight <= 0) {
+                throw new \Exception('Polaroid borders are too large, no space left for image content. Please adjust border settings.');
             }
-            $white = intval(imagecolorallocate($img, 255, 255, 255));
 
-            // We fill in the new white image
-            if (!imagefill($img, 0, 0, $white)) {
-                throw new \Exception('Cannot fill image.');
+            // Calculate the amount of pixels to be cropped from the original image's height.
+            // This 'cropAmount' is distributed evenly on the top and bottom of the original image.
+            $cropAmountTotal = $resourceHeight - $targetImageContentHeight;
+            // Calculate the offset from the top (and bottom) of the original image for the crop.
+            $cropYOffset = (int) round($cropAmountTotal / 2);
+
+            // Create a new GD image resource for the final Polaroid output.
+            // This canvas will have the calculated final dimensions and serve as the base for the Polaroid.
+            $polaroidCanvas = imagecreatetruecolor($finalPolaroidWidth, $finalPolaroidHeight);
+            if (!$polaroidCanvas) {
+                throw new \Exception('Failed to create new image canvas for Polaroid effect.');
+            }
+            $white = intval(imagecolorallocate($polaroidCanvas, 255, 255, 255));
+
+            // Fill the entire canvas with white. This forms the base for all white borders.
+            if (!imagefill($polaroidCanvas, 0, 0, $white)) {
+                throw new \Exception('Failed to fill Polaroid canvas with white color.');
             }
 
-            // We copy the image to which we want to apply the polariod effect in our new image.
-            if (!imagecopy($img, $resource, 11, 11, 0, 0, imagesx($resource), imagesy($resource))) {
-                unset($img);
-                throw new \Exception('Cannot copy image.');
-            }
-
-            // Border color
-            $color = intval(imagecolorallocate($img, 192, 192, 192));
-            // We put a gray border to our image.
-            if (!imagerectangle($img, 0, 0, imagesx($img) - 4, imagesy($img) - 4, $color)) {
-                unset($img);
-                throw new \Exception('Cannot add border.');
-            }
-
-            // Shade Colors
-            $gris1 = intval(imagecolorallocate($img, 208, 208, 208));
-            $gris2 = intval(imagecolorallocate($img, 224, 224, 224));
-            $gris3 = intval(imagecolorallocate($img, 240, 240, 240));
-
-            // We add a small shadow
-            if (
-                !imageline($img, 2, imagesy($img) - 3, imagesx($img) - 1, imagesy($img) - 3, $gris1) ||
-                !imageline($img, 4, imagesy($img) - 2, imagesx($img) - 1, imagesy($img) - 2, $gris2) ||
-                !imageline($img, 6, imagesy($img) - 1, imagesx($img) - 1, imagesy($img) - 1, $gris3) ||
-                !imageline($img, imagesx($img) - 3, 2, imagesx($img) - 3, imagesy($img) - 4, $gris1) ||
-                !imageline($img, imagesx($img) - 2, 4, imagesx($img) - 2, imagesy($img) - 4, $gris2) ||
-                !imageline($img, imagesx($img) - 1, 6, imagesx($img) - 1, imagesy($img) - 4, $gris3)
-            ) {
-                unset($img);
-                throw new \Exception('Cannot add shadow.');
+            // Copy the original image onto the Polaroid canvas.
+            // The image is copied without scaling. Vertical cropping is achieved by specifying
+            // the source's Y-offset ($cropYOffset) and the source's effective height ($targetImageContentHeight).
+            // The destination X/Y positions ($borderThinPx, $borderThinPx) define the top-left
+            // corner of where the (cropped) image content starts within the Polaroid canvas.
+            if (!imagecopy(
+                $polaroidCanvas,             // Destination image resource
+                $resource,                   // Source image resource
+                $borderThinPx,               // Destination X-coordinate (left border)
+                $borderThinPx,               // Destination Y-coordinate (top border)
+                0,                           // Source X-coordinate (start from left of original image)
+                $cropYOffset,                // Source Y-coordinate (start from Y-offset within original image for cropping)
+                $resourceWidth,              // Width of the source rectangle to copy (full original width)
+                $targetImageContentHeight    // Height of the source rectangle to copy (cropped height from original)
+            )) {
+                unset($polaroidCanvas);
+                throw new \Exception('Failed to copy image onto Polaroid canvas.');
             }
 
             // Convert hex color string to RGB values
@@ -1199,8 +1221,8 @@ class Image
             list($rbcc, $gbcc, $bbcc) = $colorComponents;
 
             // We rotate the image
-            $background = intval(imagecolorallocate($img, $rbcc, $gbcc, $bbcc));
-            $rotatedImg = imagerotate($img, $this->polaroidRotation, $background);
+            $rotationBackgroundColor = intval(imagecolorallocate($polaroidCanvas, $rbcc, $gbcc, $bbcc));
+            $rotatedImg = imagerotate($polaroidCanvas, $this->polaroidRotation, $rotationBackgroundColor);
 
             if (!$rotatedImg) {
                 throw new \Exception('Cannot rotate image.');
@@ -1212,8 +1234,8 @@ class Image
             $this->addErrorData($e->getMessage());
 
             // Try to clear cache
-            if (isset($img) && $img instanceof GdImage) {
-                unset($img);
+            if (isset($polaroidCanvas) && $polaroidCanvas instanceof GdImage) {
+                unset($polaroidCanvas);
             }
 
             // Re-throw exception on loglevel > 1
@@ -1226,7 +1248,7 @@ class Image
         }
         $this->imageModified = true;
         // We destroy the image we have been working with
-        unset($img);
+        unset($polaroidCanvas);
 
         // We return the rotated image
         return $rotatedImg;
