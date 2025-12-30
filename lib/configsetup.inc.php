@@ -865,26 +865,24 @@ return [
             'options' => CollageLayoutEnum::cases(),
             'value' => $config['collage']['layout'],
         ],
+        'collage_orientation' => [
+            'view' => 'basic',
+            'type' => 'select',
+            'name' => 'collage[orientation]',
+            'data-theme-field' => 'true',
+            'placeholder' => $defaultConfig['collage']['orientation'],
+            'options' => [
+                'landscape' => 'Landscape image capture',
+                'portrait' => 'Portrait image capture',
+            ],
+            'value' => $config['collage']['orientation'],
+        ],
         'layout_generator' => [
             'view' => 'expert',
             'type' => 'button',
             'placeholder' => 'layout_generator',
             'name' => 'LAYOUTGENERATOR',
             'value' => 'layout-generator',
-        ],
-        'collage_resolution' => [
-            'view' => 'expert',
-            'type' => 'select',
-            'name' => 'collage[resolution]',
-            'data-theme-field' => 'true',
-            'placeholder' => $defaultConfig['collage']['resolution'],
-            'options' => [
-                '150dpi' => '150 dpi',
-                '300dpi' => '300 dpi',
-                '400dpi' => '400 dpi',
-                '600dpi' => '600 dpi',
-            ],
-            'value' => $config['collage']['resolution'],
         ],
         'collage_dashedline_color' => [
             'view' => 'advanced',
@@ -3285,6 +3283,13 @@ return [
             'placeholder' => $defaultConfig['commands']['take_picture'],
             'name' => 'commands[take_picture]',
             'value' => htmlentities($config['commands']['take_picture'] ?? ''),
+        ],
+        'take_collage_cmd' => [
+            'view' => 'expert',
+            'type' => 'input',
+            'placeholder' => $defaultConfig['commands']['take_collage'],
+            'name' => 'commands[take_collage]',
+            'value' => htmlentities($config['commands']['take_collage'] ?? ''),
         ],
         'pre_photo_cmd' => [
             'view' => 'expert',
