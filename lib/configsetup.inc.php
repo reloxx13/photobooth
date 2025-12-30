@@ -819,6 +819,18 @@ return [
             'name' => 'textonpicture[linespace]',
             'value' => $config['textonpicture']['linespace'],
         ],
+        'textonpicture_positioner' => [
+            'view' => 'advanced',
+            'type' => 'button',
+            'placeholder' => 'pictures:textonpicture_positioner',
+            'name' => 'textonpicture[positioner]',
+            'value' => 'open-text-positioner-btn',
+            'attributes' => [
+                'class' => 'open-text-positioner',
+                'data-frame' => PathUtility::getPublicPath($config['picture']['frame']),
+                'data-font' => PathUtility::getPublicPath($config['textonpicture']['font']),
+            ],
+        ],
     ],
     'collage' => [
         'view' => 'basic',

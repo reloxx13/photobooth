@@ -113,7 +113,7 @@ try {
         }
 
         if ($processor !== null && $processor instanceof ImageProcessor && method_exists($processor, 'preImageProcessing')) {
-            list($imageHandler, $vars, $config, $imageResource) = $processor->preImageProcessing($imageHandler, $vars, $config, $imageResource);
+            [$imageHandler, $vars, $config, $imageResource] = $processor->preImageProcessing($imageHandler, $vars, $config, $imageResource);
         }
         if (!$vars['isChroma']) {
             if ($vars['isCollage'] && $vars['fileName'] != $vars['singleImageFile']) {
@@ -195,6 +195,8 @@ try {
                     }
                 }
 
+                $drawTextOnFrame = ($config['textonpicture']['enabled'] && !$vars['isCollage'] && !$vars['isChroma']) || $vars['editSingleCollage'];
+
                 if (($config['picture']['take_frame'] && !$vars['isCollage']) || ($vars['editSingleCollage'] && ($config['collage']['take_frame'] === 'always' || $config['collage']['take_frame'] !== 'always' && $config['picture']['take_frame']))) {
                     if (!$vars['isCollage'] || $config['collage']['take_frame'] !== 'always') {
                         $imageHandler->frameExtend = $config['picture']['extend_by_frame'];
@@ -207,6 +209,18 @@ try {
                     } else {
                         $imageHandler->frameExtend = false;
                     }
+                    if ($drawTextOnFrame) {
+                        $imageHandler->fontSize        = $config['textonpicture']['font_size'];
+                        $imageHandler->fontRotation    = $config['textonpicture']['rotation'];
+                        $imageHandler->fontLocationX   = $config['textonpicture']['locationx'];
+                        $imageHandler->fontLocationY   = $config['textonpicture']['locationy'];
+                        $imageHandler->fontColor       = $config['textonpicture']['font_color'];
+                        $imageHandler->fontPath        = $config['textonpicture']['font'];
+                        $imageHandler->textLine1       = $config['textonpicture']['line1'];
+                        $imageHandler->textLine2       = $config['textonpicture']['line2'];
+                        $imageHandler->textLine3       = $config['textonpicture']['line3'];
+                        $imageHandler->textLineSpacing = $config['textonpicture']['linespace'];
+                    }
                     $imageResource = $imageHandler->applyFrame($imageResource);
                     if (!$imageResource instanceof \GdImage) {
                         throw new \Exception('Error applying frame to image resource.');
@@ -216,7 +230,7 @@ try {
         }
 
         if ($processor !== null && $processor instanceof ImageProcessor && method_exists($processor, 'postImageProcessing')) {
-            list($imageHandler, $vars, $config, $imageResource) = $processor->postImageProcessing($imageHandler, $vars, $config, $imageResource);
+            [$imageHandler, $vars, $config, $imageResource] = $processor->postImageProcessing($imageHandler, $vars, $config, $imageResource);
         }
 
         if ($config['keying']['enabled'] || $vars['isChroma']) {
@@ -235,7 +249,7 @@ try {
             }
         }
 
-        if ($config['textonpicture']['enabled'] && (!$vars['isCollage'] && !$vars['isChroma'] || $vars['editSingleCollage'])) {
+        if ($config['textonpicture']['enabled'] && (!$vars['isCollage'] && !$vars['isChroma'] || $vars['editSingleCollage']) && !$drawTextOnFrame) {
             $imageHandler->fontSize = $config['textonpicture']['font_size'];
             $imageHandler->fontRotation = $config['textonpicture']['rotation'];
             $imageHandler->fontLocationX = $config['textonpicture']['locationx'];

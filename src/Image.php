@@ -342,7 +342,7 @@ class Image
             $colorComponents = sscanf($hexColor, '#%02x%02x%02x%02x');
 
             if ($colorComponents !== null) {
-                list($r, $g, $b, $a) = $colorComponents;
+                [$r, $g, $b, $a] = $colorComponents;
                 return [$r, $g, $b, $a];
             } else {
                 throw new \Exception('Color parsing failed: sscanf returned null.');
@@ -726,6 +726,13 @@ class Image
                 throw new \Exception('Failed to create frame from image.');
             }
 
+            $origFrameWidth = imagesx($frame);
+            $origFrameHeight = imagesy($frame);
+            // Draw text onto the frame in its native resolution.
+            // Coordinates, font-size and line-spacing are defined for the frame itself,
+            // so skip any scaling at this stage. The text will scale together with the
+            // frame when we resize it to the final photo size below.
+            $frame = $this->applyTextOnResource($frame, true);
             $frame = self::resizePngImage($frame, $pic_width, $pic_height);
             if (!$frame) {
                 throw new \Exception('Cannot resize Frame.');
@@ -741,6 +748,7 @@ class Image
             } else {
                 $dst_y = intval(($pic_height - $frame_height) / 2);
             }
+
 
             if (!imagecopy($img, $frame, $dst_x, $dst_y, 0, 0, $frame_width, $frame_height)) {
                 throw new \Exception('Error applying frame to image.');
@@ -770,7 +778,18 @@ class Image
     /**
      * Apply text to the source image resource
      */
-    public function applyText(GdImage $sourceResource): GdImage
+    /**
+     * Apply configured text onto a given resource.
+     * If $skipScaling is true, coordinates/font sizes are used as-is (no frame->target scaling/clamp).
+     */
+    public function applyTextOnResource(
+        GdImage $sourceResource,
+        bool $skipScaling = false,
+        ?int $scaleFromWidth = null,
+        ?int $scaleFromHeight = null,
+        ?int $scaleToWidth = null,
+        ?int $scaleToHeight = null
+    ): GdImage
     {
         try {
             $fontPath = PathUtility::getAbsolutePath($this->fontPath);
@@ -783,7 +802,7 @@ class Image
             $textLineSpacing = $this->textLineSpacing;
             // Convert hex color string to RGB values
             $colorComponents = self::getColorComponents($this->fontColor);
-            list($r, $g, $b) = $colorComponents;
+            [$r, $g, $b] = $colorComponents;
 
             // Allocate color and set font
             $color = intval(imagecolorallocate($sourceResource, $r, $g, $b));
@@ -801,30 +820,101 @@ class Image
                 $fontPath = FontUtility::getFontPath($this->fontPath);
             }
 
-            // Add first line of text
-            if (!empty($this->textLine1)) {
-                if (!imagettftext($sourceResource, $fontSize, $fontRotation, $fontLocationX, $fontLocationY, $color, $fontPath, $this->textLine1)) {
-                    throw new \Exception('Could not add first line of text to resource.');
+            $targetWidth  = imagesx($sourceResource);
+            $targetHeight = imagesy($sourceResource);
+
+            if (!$skipScaling) {
+                // Scale coordinates from frame's intrinsic size to actual output size if they differ.
+                $frameWidth  = $scaleToWidth;
+                $frameHeight = $scaleToHeight;
+
+                if ($frameWidth === null || $frameHeight === null) {
+                    try {
+                        $frameAbsPath = PathUtility::getAbsolutePath($this->framePath);
+                        if (is_file($frameAbsPath)) {
+                            [$frameWidth, $frameHeight] = getimagesize($frameAbsPath);
+                        }
+                    } catch (\Throwable) {
+                        // ignore if frame cannot be resolved
+                    }
+                }
+
+                if (!empty($frameWidth) && !empty($frameHeight) && $frameWidth > 0 && $frameHeight > 0) {
+                    // If scaleFrom* provided, use custom scale (e.g., inverse when drawing before resize)
+                    if (!empty($scaleFromWidth) && !empty($scaleFromHeight)) {
+                        $scaleX = $frameWidth / $scaleFromWidth;
+                        $scaleY = $frameHeight / $scaleFromHeight;
+                    } else {
+                        $scaleX        = $targetWidth / $frameWidth;
+                        $scaleY        = $targetHeight / $frameHeight;
+                    }
+
+                    $fontLocationX = (int)round($fontLocationX * $scaleX);
+                    $fontLocationY = (int)round($fontLocationY * $scaleY);
+                    // Scale font size and line spacing with vertical scale to keep visual proportion.
+                    $fontSize        = (int)round($fontSize * $scaleY);
+                    $textLineSpacing = (int)round($textLineSpacing * $scaleY);
                 }
             }
 
-            // Add second line of text
-            if (!empty($this->textLine2)) {
-                $line2Y = $fontRotation < 45 && $fontRotation > -45 ? $fontLocationY + $textLineSpacing : $fontLocationY;
-                $line2X = $fontRotation < 45 && $fontRotation > -45 ? $fontLocationX : $fontLocationX + $textLineSpacing;
-                if (!imagettftext($sourceResource, $fontSize, $fontRotation, $line2X, $line2Y, $color, $fontPath, $this->textLine2)) {
-                    throw new \Exception('Could not add second line of text to resource.');
-                }
-            }
+            $targetWidth  = imagesx($sourceResource);
+            $targetHeight = imagesy($sourceResource);
 
-            // Add third line of text
-            if (!empty($this->textLine3)) {
-                $line3Y = $fontRotation < 45 && $fontRotation > -45 ? $fontLocationY + $textLineSpacing * 2 : $fontLocationY;
-                $line3X = $fontRotation < 45 && $fontRotation > -45 ? $fontLocationX : $fontLocationX + $textLineSpacing * 2;
-                if (!imagettftext($sourceResource, $fontSize, $fontRotation, $line3X, $line3Y, $color, $fontPath, $this->textLine3)) {
-                    throw new \Exception('Could not add third line of text to resource.');
+            $drawLine = function (string $text, int $offsetIndex = 0) use (
+                $fontSize,
+                $fontRotation,
+                $fontLocationX,
+                $fontLocationY,
+                $textLineSpacing,
+                $color,
+                $fontPath,
+                $sourceResource,
+                $targetWidth,
+                $targetHeight,
+            ) {
+                if ($text === '') {
+                    return;
                 }
-            }
+
+                // Desired top-left target for this line
+                $targetX = $fontLocationX + ($fontRotation < 45 && $fontRotation > -45 ? 0 : $textLineSpacing * $offsetIndex);
+                $targetY = $fontLocationY + ($fontRotation < 45 && $fontRotation > -45 ? $textLineSpacing * $offsetIndex : 0);
+
+                // Compute bbox to translate top-left to baseline coords
+                $bbox = imagettfbbox($fontSize, $fontRotation, $fontPath, $text);
+                if ($bbox === false) {
+                    throw new \Exception('Could not calculate text bounding box.');
+                }
+
+                // bbox indices: 0=llx,1=lly,2=ulx,3=uly,4=urx,5=ury,6=lrx,7=lry
+                $minX      = min($bbox[0], $bbox[2], $bbox[4], $bbox[6]);
+                $minY      = min($bbox[1], $bbox[3], $bbox[5], $bbox[7]);
+                $maxX      = max($bbox[0], $bbox[2], $bbox[4], $bbox[6]);
+                $maxY      = max($bbox[1], $bbox[3], $bbox[5], $bbox[7]);
+                $boxWidth  = $maxX - $minX;
+                $boxHeight = $maxY - $minY;
+
+                // Clamp so text stays inside image
+                if ($targetX + $boxWidth > $targetWidth) {
+                    $targetX = $targetWidth - $boxWidth;
+                }
+                if ($targetY + $boxHeight > $targetHeight) {
+                    $targetY = $targetHeight - $boxHeight;
+                }
+                $targetX = max(0, $targetX);
+                $targetY = max(0, $targetY);
+
+                $baselineX = (int)round($targetX - $minX);
+                $baselineY = (int)round($targetY - $minY);
+
+                if (!imagettftext($sourceResource, $fontSize, $fontRotation, $baselineX, $baselineY, $color, $fontPath, $text)) {
+                    throw new \Exception('Could not add text line to resource.');
+                }
+            };
+
+            $drawLine($this->textLine1);
+            $drawLine($this->textLine2, 1);
+            $drawLine($this->textLine3, 2);
 
             if ($isTempFont && file_exists($tempFontPath)) {
                 if (!unlink($tempFontPath)) {
@@ -845,6 +935,14 @@ class Image
             // Return unmodified resource
             return $sourceResource;
         }
+    }
+
+    /**
+     * Apply text using current configuration to the provided resource.
+     */
+    public function applyText(GdImage $sourceResource): GdImage
+    {
+        return $this->applyTextOnResource($sourceResource, false);
     }
 
     /**
@@ -993,7 +1091,7 @@ class Image
                 $qrwidth = imagesx($qrCodeImage);
                 $qrheight = imagesy($qrCodeImage);
                 $colorComponents = self::getColorComponents($this->qrColor);
-                list($r, $g, $b) = $colorComponents;
+                [$r, $g, $b] = $colorComponents;
 
                 $selected = intval(imagecolorallocate($qrCodeImage, $r, $g, $b));
 
@@ -1218,7 +1316,7 @@ class Image
 
             // Convert hex color string to RGB values
             $colorComponents = self::getColorComponents($this->polaroidBgColor);
-            list($rbcc, $gbcc, $bbcc) = $colorComponents;
+            [$rbcc, $gbcc, $bbcc] = $colorComponents;
 
             // We rotate the image
             $rotationBackgroundColor = intval(imagecolorallocate($polaroidCanvas, $rbcc, $gbcc, $bbcc));

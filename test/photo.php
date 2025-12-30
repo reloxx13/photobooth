@@ -91,7 +91,21 @@ try {
         }
     }
 
+    $drawTextOnFrame = $config['textonpicture']['enabled'];
+
     if ($config['picture']['take_frame']) {
+        if ($drawTextOnFrame) {
+            $imageHandler->fontSize        = $config['textonpicture']['font_size'];
+            $imageHandler->fontRotation    = $config['textonpicture']['rotation'];
+            $imageHandler->fontLocationX   = $config['textonpicture']['locationx'];
+            $imageHandler->fontLocationY   = $config['textonpicture']['locationy'];
+            $imageHandler->fontColor       = $config['textonpicture']['font_color'];
+            $imageHandler->fontPath        = $config['textonpicture']['font'];
+            $imageHandler->textLine1       = $config['textonpicture']['line1'];
+            $imageHandler->textLine2       = $config['textonpicture']['line2'];
+            $imageHandler->textLine3       = $config['textonpicture']['line3'];
+            $imageHandler->textLineSpacing = $config['textonpicture']['linespace'];
+        }
         $imageHandler->frameExtend = $config['picture']['extend_by_frame'];
         if ($config['picture']['extend_by_frame']) {
             $imageHandler->frameExtendLeft = $config['picture']['frame_left_percentage'];
@@ -109,7 +123,9 @@ try {
         [$imageHandler, $vars, $config, $imageResource] = $processor->postImageProcessing($imageHandler, $vars, $config, $imageResource);
     }
 
-    if ($config['textonpicture']['enabled']) {
+    $lineMetrics = null;
+
+    if ($config['textonpicture']['enabled'] && !$drawTextOnFrame) {
         $imageHandler->fontSize = $config['textonpicture']['font_size'];
         $imageHandler->fontRotation = $config['textonpicture']['rotation'];
         $imageHandler->fontLocationX = $config['textonpicture']['locationx'];
@@ -120,6 +136,19 @@ try {
         $imageHandler->textLine2 = $config['textonpicture']['line2'];
         $imageHandler->textLine3 = $config['textonpicture']['line3'];
         $imageHandler->textLineSpacing = $config['textonpicture']['linespace'];
+
+        // Debug: measure bbox heights for line spacing
+        $bbox1 = imagettfbbox($imageHandler->fontSize, $imageHandler->fontRotation, Photobooth\Utility\FontUtility::getFontPath($imageHandler->fontPath), $imageHandler->textLine1 ?: 'Ag');
+        $bbox2 = imagettfbbox($imageHandler->fontSize, $imageHandler->fontRotation, Photobooth\Utility\FontUtility::getFontPath($imageHandler->fontPath), $imageHandler->textLine2 ?: 'Ag');
+        $h1 = isset($bbox1[1], $bbox1[5]) ? abs($bbox1[5] - $bbox1[1]) : 0;
+        $h2 = isset($bbox2[1], $bbox2[5]) ? abs($bbox2[5] - $bbox2[1]) : $h1;
+        $lineMetrics = [
+            'bbox_height_line1' => $h1,
+            'bbox_height_line2' => $h2,
+            'configured_linespace' => $imageHandler->textLineSpacing,
+            'gap_suggestion' => $imageHandler->textLineSpacing - $h1
+        ];
+
         $imageResource = $imageHandler->applyText($imageResource);
         if (!$imageResource) {
             throw new \Exception('Error applying text to image resource.');
@@ -152,6 +181,9 @@ include PathUtility::getAbsolutePath('admin/helper/index.php');
                         echo '<div class="border border-solid border-black">';
                         echo '<img src="' . PathUtility::getPublicPath($vars['tmpFile']) . '" alt="Test Image">';
                         echo '</div>';
+                        if ($lineMetrics !== null) {
+                            echo '<pre class="mt-4 text-xs bg-gray-100 p-3 border">' . htmlspecialchars(json_encode($lineMetrics, JSON_PRETTY_PRINT), ENT_QUOTES) . '</pre>';
+                        }
                     } else {
                         echo '<div class="flex flex-col gap-2">';
                         echo '<div class="flex flex-col justify-between p-2 rounded-sm bg-red-300 text-red-800 border-2 border-red-800"><div class="col-span-1">' . $errorMessage . '</div></div>';

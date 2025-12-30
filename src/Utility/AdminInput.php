@@ -64,9 +64,27 @@ class AdminInput
         ';
     }
 
-    public static function renderCta(string $label, string $btnId = '', ?array $config = null): string
+    public static function renderCta(string $label, string $btnId = '', ?array $config = null, array $attributes = []): string
     {
         $languageService = LanguageService::getInstance();
+
+        // Prevent accidental form submission from helper buttons (e.g. positioner)
+        if (!isset($attributes['type'])) {
+            $attributes['type'] = 'button';
+        }
+
+        $baseClass =
+            'w-full h-12 rounded-full bg-brand-1 text-white flex items-center justify-center relative ml-auto border-2 border-solid border-brand-1 hover:bg-content-1 hover:text-brand-1 transition font-bold [&.isDirty]:bg-amber-500 [&.isDirty]:border-amber-500 [&.isDirty]:text-black';
+
+        if (isset($attributes['class'])) {
+            $baseClass .= ' ' . $attributes['class'];
+            unset($attributes['class']);
+        }
+
+        $attributeString = '';
+        foreach ($attributes as $key => $value) {
+            $attributeString .= $key . '="' . $value . '" ';
+        }
 
         $labels = '';
         if ($config !== null) {
@@ -77,7 +95,7 @@ class AdminInput
         }
 
         return '
-            <button class="w-full h-12 rounded-full bg-brand-1 text-white flex items-center justify-center relative ml-auto border-2 border-solid border-brand-1 hover:bg-content-1 hover:text-brand-1 transition font-bold [&.isDirty]:bg-amber-500 [&.isDirty]:border-amber-500 [&.isDirty]:text-black" id="' . $btnId . '">
+            <button class="' . $baseClass . '" id="' . $btnId . '" ' . $attributeString . '>
                 <span class="save">
                     ' . $languageService->translate($label) . '
                 </span>
@@ -88,7 +106,8 @@ class AdminInput
 
     public static function renderButton(array $setting, string $label, string $key, ?array $config = null): string
     {
-        $btn = self::renderCta($setting['placeholder'], $setting['value'], $config);
+        $attributes = $setting['attributes'] ?? [];
+        $btn = self::renderCta($setting['placeholder'], $setting['value'], $config, $attributes);
         $info = '';
         switch ($key) {
             case 'check_version':
