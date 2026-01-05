@@ -1,5 +1,4 @@
 <?php
-
 use Photobooth\Utility\PathUtility;
 
 ?>
@@ -34,13 +33,22 @@ use Photobooth\Utility\PathUtility;
                 </div>
             </div>
         <?php endif; ?>
-        <?php
+<?php
 if ($config['ui']['selfie_mode']) {
     include PathUtility::getAbsolutePath('template/components/selfieAction.php');
 } else {
     include PathUtility::getAbsolutePath('template/components/actionBtn.php');
 }
 ?>
+    </div>
+    <?php
+    $idleSource = $config['idle']['source'] ? PathUtility::getPublicPath($config['idle']['source']) : '';
+?>
+    <div id="idle-overlay" class="idle-overlay" data-mode="<?= $config['idle']['mode'] ?>" data-source="<?= $idleSource ?>">
+        <div id="idle-text-top" class="idle-overlay__text idle-overlay__text--top"></div>
+        <img id="idle-image" class="idle-overlay__image" alt="idle">
+        <video id="idle-video" loop muted playsinline></video>
+        <div id="idle-text-bottom" class="idle-overlay__text idle-overlay__text--bottom"></div>
     </div>
     <?php include PathUtility::getAbsolutePath('template/components/github-corner.php'); ?>
 </div>

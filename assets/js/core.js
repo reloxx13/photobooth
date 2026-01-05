@@ -40,6 +40,11 @@ const photoBooth = (function () {
         loaderMessage = loader.find('.stage-message'),
         loaderImage = loader.find('.stage-image'),
         resultPage = $('.stage[data-stage="result"]'),
+        idleOverlay = $('#idle-overlay'),
+        idleVideo = $('#idle-video'),
+        idleImage = $('#idle-image'),
+        idleTextTop = $('#idle-text-top'),
+        idleTextBottom = $('#idle-text-bottom'),
         previewIpcam = $('#preview--ipcam'),
         previewVideo = $('#preview--video'),
         previewFramePicture = $('#previewframe--picture'),
@@ -61,7 +66,16 @@ const photoBooth = (function () {
         timeToLive = config.picture.time_to_live * 1000,
         continuousCollageTime = config.collage.continuous_time * 1000,
         retryTimeout = config.picture.retry_timeout * 1000,
-        notificationTimeout = config.ui.notification_timeout * 1000;
+        notificationTimeout = config.ui.notification_timeout * 1000,
+        idleMode = config.idle.mode,
+        idleEnabled =
+            config.idle.enabled &&
+            config.idle.timeout_minutes > 0 &&
+            (idleMode === 'gallery' ||
+                idleMode === 'folder' ||
+                (idleMode === 'video' ? !!config.idle.video_source : !!config.idle.image_source)),
+        idleTimeoutMs = (config.idle.timeout_minutes || 0) * 60000,
+        idleSwitchMs = (config.idle.switch_minutes || 1) * 60000;
 
     let timeOut,
         chromaFile = '',
@@ -71,7 +85,10 @@ const photoBooth = (function () {
         command,
         startTime,
         endTime,
-        totalTime;
+        totalTime,
+        idleTimeout,
+        idleSwitchTimeout,
+        idleLastTextTop = true;
 
     api.takingPic = false;
     api.nextCollageNumber = 0;
@@ -136,6 +153,136 @@ const photoBooth = (function () {
         rotaryController.focusSet(startPage);
 
         initPhotoSwipeFromDOM('#galimages');
+
+        api.idle.resetTimer();
+    };
+
+    api.idle = {
+        pickImageFromGallery: function () {
+            const anchors = $('#galimages a');
+            if (!anchors.length) {
+                return '';
+            }
+            const randomIndex = Math.floor(Math.random() * anchors.length);
+            return $(anchors[randomIndex]).attr('href');
+        },
+        resolveSource: function () {
+            const base = environment.publicFolders.api;
+            switch (idleMode) {
+                case 'video':
+                    return config.idle.video_source;
+                case 'image':
+                    return config.idle.image_source;
+                case 'folder':
+                    return base + '/randomImg.php?dir=' + encodeURIComponent('screensavers');
+                case 'gallery':
+                    return api.idle.pickImageFromGallery();
+                default:
+                    return '';
+            }
+        },
+        hide: function () {
+            if (!idleOverlay.length) {
+                return;
+            }
+            idleOverlay.removeClass('idle-overlay--active');
+            startPage.removeClass('stage--idle');
+            clearTimeout(idleSwitchTimeout);
+            if (idleVideo.length) {
+                const vid = idleVideo.get(0);
+                vid.pause();
+                vid.currentTime = 0;
+                idleVideo.attr('src', '');
+            }
+            idleImage.hide().attr('src', '');
+            idleTextTop.text('').hide();
+            idleTextBottom.text('').hide();
+        },
+        toggleGalleryText: function () {
+            const text = config.idle.gallery_text;
+
+            if (!text) {
+                idleTextTop.hide();
+                idleTextBottom.hide();
+                return;
+            }
+
+            if (idleLastTextTop) {
+                idleTextBottom.text(text).show();
+                idleTextTop.hide();
+            } else {
+                idleTextTop.text(text).show();
+                idleTextBottom.hide();
+            }
+
+            idleLastTextTop = !idleLastTextTop;
+        },
+        show: function () {
+            if (!idleEnabled || !idleOverlay.length) {
+                return;
+            }
+            if (!startPage.hasClass('stage--active')) {
+                api.idle.resetTimer();
+                return;
+            }
+
+            const mode = idleMode;
+            const source = api.idle.resolveSource();
+            if (!source) {
+                api.idle.resetTimer();
+                return;
+            }
+
+            if (mode === 'video') {
+                idleOverlay.css('background-image', 'none');
+                idleVideo.attr('src', source || '');
+                idleVideo.show();
+                const vid = idleVideo.get(0);
+                vid.play().catch(() => {});
+                idleImage.hide();
+                idleTextTop.hide();
+                idleTextBottom.hide();
+            } else if (mode === 'gallery') {
+                idleVideo.hide();
+                idleOverlay.css('background-image', 'none');
+                idleImage.attr('src', source).show();
+                api.idle.toggleGalleryText();
+            } else {
+                idleVideo.hide();
+                idleImage.hide();
+                idleTextTop.hide();
+                idleTextBottom.hide();
+                idleOverlay.css('background-image', source ? `url(${source})` : 'none');
+                idleOverlay.css('background-size', 'cover');
+            }
+
+            startPage.addClass('stage--idle');
+            idleOverlay.addClass('idle-overlay--active');
+
+            clearTimeout(idleSwitchTimeout);
+            if ((mode === 'folder' || mode === 'gallery') && idleSwitchMs > 0) {
+                idleSwitchTimeout = setTimeout(function nextIdleFrame() {
+                    const nextSource = api.idle.resolveSource();
+                    if (nextSource) {
+                        if (mode === 'folder') {
+                            idleOverlay.css('background-image', `url(${nextSource})`);
+                        } else if (mode === 'gallery') {
+                            idleImage.attr('src', nextSource).show();
+                            api.idle.toggleGalleryText();
+                        }
+                    }
+                    idleSwitchTimeout = setTimeout(nextIdleFrame, idleSwitchMs);
+                }, idleSwitchMs);
+            }
+        },
+        resetTimer: function () {
+            if (!idleEnabled) {
+                return;
+            }
+            clearTimeout(idleTimeout);
+            api.idle.hide();
+            idleTimeout = setTimeout(api.idle.show, idleTimeoutMs);
+        }
     };
 
     api.navbar = {
@@ -503,6 +650,7 @@ const photoBooth = (function () {
         videoBackground.hide();
         startPage.removeClass('stage--active');
         loader.addClass('stage--active');
+        api.idle.hide();
 
         if (config.get_request.countdown) {
             let getMode;
@@ -1250,6 +1398,8 @@ const photoBooth = (function () {
         if (config.commands.post_photo) {
             api.shellCommand('post-command', filename);
         }
+
+        api.idle.resetTimer();
     };
 
     api.addImage = function (imageName) {
@@ -1459,6 +1609,17 @@ const photoBooth = (function () {
         photoboothTools.reloadPage();
         rotaryController.focusSet(startPage);
     });
+
+    if (idleEnabled) {
+        $(document).on('click touchstart keydown mousemove', function () {
+            api.idle.resetTimer();
+        });
+
+        idleOverlay.on('click touchstart', function (e) {
+            e.preventDefault();
+            api.idle.resetTimer();
+        });
+    }
 
     $('.cups-button').on('click', function (ev) {
         ev.preventDefault();
