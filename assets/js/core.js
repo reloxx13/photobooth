@@ -88,7 +88,8 @@ const photoBooth = (function () {
         totalTime,
         idleTimeout,
         idleSwitchTimeout,
-        idleLastTextTop = true;
+        idleFlip = false,
+        idleLastGallerySource = '';
 
     api.takingPic = false;
     api.nextCollageNumber = 0;
@@ -176,7 +177,7 @@ const photoBooth = (function () {
                 case 'folder':
                     return base + '/randomImg.php?dir=' + encodeURIComponent('screensavers');
                 case 'gallery':
-                    return api.idle.pickImageFromGallery();
+                    return api.idle.pickImageFromGallery() || config.idle.image_source;
                 default:
                     return '';
             }
@@ -200,23 +201,63 @@ const photoBooth = (function () {
             idleTextBottom.text('').hide();
         },
         toggleGalleryText: function () {
-            const text = config.idle.gallery_text;
+            const galleryText = config.idle.gallery_text;
+            const eventText = [config.event.textLeft, config.event.textRight].filter(Boolean).join(' ').trim();
+            const hasGallery = !!galleryText;
+            const hasEvent = !!eventText;
 
-            if (!text) {
+            // nothing to show
+            if (!hasGallery && !hasEvent) {
                 idleTextTop.hide();
                 idleTextBottom.hide();
                 return;
             }
 
-            if (idleLastTextTop) {
-                idleTextBottom.text(text).show();
-                idleTextTop.hide();
+            // If both exist: show both simultaneously and swap positions each call
+            if (hasGallery && hasEvent) {
+                if (idleFlip) {
+                    idleTextTop.text(galleryText).show();
+                    idleTextBottom.text(eventText).show();
+                } else {
+                    idleTextTop.text(eventText).show();
+                    idleTextBottom.text(galleryText).show();
+                }
             } else {
-                idleTextTop.text(text).show();
-                idleTextBottom.hide();
+                // Only one text available: place it alternating top/bottom
+                const singleText = hasGallery ? galleryText : eventText;
+                if (idleFlip) {
+                    idleTextTop.text(singleText).show();
+                    idleTextBottom.text('').hide();
+                } else {
+                    idleTextBottom.text(singleText).show();
+                    idleTextTop.text('').hide();
+                }
             }
 
-            idleLastTextTop = !idleLastTextTop;
+            idleFlip = !idleFlip;
+        },
+        stepGallery: function () {
+            if (idleMode !== 'gallery' || !idleOverlay.hasClass('idle-overlay--active')) {
+                return;
+            }
+            let nextSource = api.idle.resolveSource();
+            const anchors = $('#galimages a');
+            if (anchors.length > 1) {
+                let guard = 5;
+                while (nextSource === idleLastGallerySource && guard > 0) {
+                    nextSource = api.idle.resolveSource();
+                    guard--;
+                }
+            }
+            idleLastGallerySource = nextSource;
+            if (nextSource) {
+                idleImage.attr('src', nextSource).show();
+            }
+            api.idle.toggleGalleryText();
+            clearTimeout(idleSwitchTimeout);
+            if (idleSwitchMs > 0) {
+                idleSwitchTimeout = setTimeout(api.idle.show, idleSwitchMs);
+            }
         },
         show: function () {
             if (!idleEnabled || !idleOverlay.length) {
@@ -227,11 +268,20 @@ const photoBooth = (function () {
                 return;
             }
 
+            if (mode === 'gallery') {
+                idleOverlay.addClass('idle-overlay--gallery');
+            } else {
+                idleOverlay.removeClass('idle-overlay--gallery');
+            }
+
             const mode = idleMode;
             const source = api.idle.resolveSource();
             if (!source) {
                 api.idle.resetTimer();
                 return;
+            }
+            if (mode === 'gallery') {
+                idleLastGallerySource = source;
             }
 
             if (mode === 'video') {
@@ -239,7 +289,9 @@ const photoBooth = (function () {
                 idleVideo.attr('src', source || '');
                 idleVideo.show();
                 const vid = idleVideo.get(0);
-                vid.play().catch(() => {});
+                vid.play().catch((err) => {
+                    photoboothTools.console.logDev('Idle video play failed: ' + err);
+                });
                 idleImage.hide();
                 idleTextTop.hide();
                 idleTextBottom.hide();
@@ -264,14 +316,28 @@ const photoBooth = (function () {
             clearTimeout(idleSwitchTimeout);
             if ((mode === 'folder' || mode === 'gallery') && idleSwitchMs > 0) {
                 idleSwitchTimeout = setTimeout(function nextIdleFrame() {
-                    const nextSource = api.idle.resolveSource();
+                    let nextSource = api.idle.resolveSource();
+                    if (mode === 'gallery') {
+                        const anchors = $('#galimages a');
+                        if (anchors.length > 1) {
+                            // Try to avoid immediate repeat
+                            let guard = 5;
+                            while (nextSource === idleLastGallerySource && guard > 0) {
+                                nextSource = api.idle.resolveSource();
+                                guard--;
+                            }
+                        }
+                        idleLastGallerySource = nextSource;
+                    }
                     if (nextSource) {
                         if (mode === 'folder') {
                             idleOverlay.css('background-image', `url(${nextSource})`);
                         } else if (mode === 'gallery') {
                             idleImage.attr('src', nextSource).show();
-                            api.idle.toggleGalleryText();
                         }
+                    }
+                    if (mode === 'gallery') {
+                        api.idle.toggleGalleryText();
                     }
                     idleSwitchTimeout = setTimeout(nextIdleFrame, idleSwitchMs);
                 }, idleSwitchMs);

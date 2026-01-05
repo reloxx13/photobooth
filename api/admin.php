@@ -151,6 +151,14 @@ if ($action === 'reset') {
     $newConfig['background']['admin']    = $normalizePath($newConfig['background']['admin'] ?? null);
     $newConfig['background']['chroma']   = $normalizePath($newConfig['background']['chroma'] ?? null);
     $newConfig['collage']['placeholderpath'] = $normalizePath($newConfig['collage']['placeholderpath'] ?? null);
+    $newConfig['idle']['image_source']   = $normalizePath($newConfig['idle']['image_source'] ?? null);
+    $newConfig['idle']['video_source']   = $normalizePath($newConfig['idle']['video_source'] ?? null);
+    if (isset($newConfig['idle']['switch_minutes'])) {
+        $newConfig['idle']['switch_minutes'] = (int)$newConfig['idle']['switch_minutes'];
+    }
+    if (isset($newConfig['idle']['timeout_minutes'])) {
+        $newConfig['idle']['timeout_minutes'] = (int)$newConfig['idle']['timeout_minutes'];
+    }
 
     // Fonts selected via font picker
     $newConfig['textonpicture']['font'] = $normalizePath($newConfig['textonpicture']['font'] ?? null);
@@ -182,9 +190,14 @@ if ($action === 'reset') {
             $logger->debug('Password not set. Login disabled.', $newConfig['login']);
         }
     } else {
-        $newConfig['login']['password'] = null;
-        $newConfig['login']['keypad'] = false;
-        $newConfig['login']['pin'] = '';
+    $newConfig['login']['password'] = null;
+    $newConfig['login']['keypad'] = false;
+    $newConfig['login']['pin'] = '';
+    }
+
+    // Normalize idle boolean values (checkbox submits strings)
+    if (isset($newConfig['idle']['enabled'])) {
+        $newConfig['idle']['enabled'] = filter_var($newConfig['idle']['enabled'], FILTER_VALIDATE_BOOLEAN);
     }
 
     if (isset($newConfig['login']['rental_keypad']) && $newConfig['login']['rental_keypad'] == true) {
@@ -391,7 +404,7 @@ if ($action === 'reset') {
             'message' => 'New config saved.',
         ]);
     } catch (\Exception $exception) {
-        $logger->error('ERROR: Config can not be saved!');
+        $logger->error('ERROR: Config can not be saved!', ['error' => $exception->getMessage()]);
         echo json_encode([
             'status' => 'error',
             'message' => $exception->getMessage(),
