@@ -42,9 +42,24 @@ if ($config['ui']['selfie_mode']) {
 ?>
     </div>
     <?php
-    $idleSource = $config['idle']['source'] ? PathUtility::getPublicPath($config['idle']['source']) : '';
+    $idleMode = $config['idle']['mode'] ?? 'image';
+    $idleImageSource = $config['idle']['image_source'] ?? '';
+    $idleVideoSource = $config['idle']['video_source'] ?? '';
+
+    $idleSource = '';
+    if ($idleMode === 'image' && $idleImageSource) {
+        $idleSource = PathUtility::getPublicPath($idleImageSource);
+    } elseif ($idleMode === 'video' && $idleVideoSource) {
+        $idleSource = PathUtility::getPublicPath($idleVideoSource);
+    }
 ?>
-    <div id="idle-overlay" class="idle-overlay" data-mode="<?= $config['idle']['mode'] ?>" data-source="<?= $idleSource ?>">
+    <div
+        id="idle-overlay"
+        class="idle-overlay"
+        data-mode="<?= $idleMode ?>"
+        data-source="<?= $idleSource ?>"
+        style="display: none;"
+    >
         <div id="idle-text-top" class="idle-overlay__text idle-overlay__text--top"></div>
         <img id="idle-image" class="idle-overlay__image" alt="idle">
         <video id="idle-video" loop muted playsinline></video>
