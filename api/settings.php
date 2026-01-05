@@ -40,6 +40,12 @@ if (!empty($config['background']['admin'])) {
 if (!empty($config['background']['chroma'])) {
     $config['background']['chroma'] = PathUtility::getPublicPath($config['background']['chroma']);
 }
+if (!empty($config['idle']['image_source']) && $config['idle']['mode'] !== 'folder') {
+    $config['idle']['image_source'] = PathUtility::getPublicPath($config['idle']['image_source']);
+}
+if (!empty($config['idle']['video_source'])) {
+    $config['idle']['video_source'] = PathUtility::getPublicPath($config['idle']['video_source']);
+}
 
 echo 'const config = ' . json_encode($config) . ';';
 echo 'const environment = ' . json_encode(new Environment()) . ';';

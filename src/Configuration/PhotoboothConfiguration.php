@@ -20,6 +20,7 @@ use Photobooth\Configuration\Section\FtpConfiguration;
 use Photobooth\Configuration\Section\GalleryConfiguration;
 use Photobooth\Configuration\Section\GetRequestConfiguration;
 use Photobooth\Configuration\Section\IconsConfiguration;
+use Photobooth\Configuration\Section\IdleConfiguration;
 use Photobooth\Configuration\Section\KeyingConfiguration;
 use Photobooth\Configuration\Section\LoginConfiguration;
 use Photobooth\Configuration\Section\LogoConfiguration;
@@ -65,6 +66,7 @@ class PhotoboothConfiguration implements ConfigurationInterface
                 ->append(DevConfiguration::getNode())
                 ->append(WebserverConfiguration::getNode())
                 ->append(StartScreenConfiguration::getNode())
+                ->append(IdleConfiguration::getNode())
                 ->append(LogoConfiguration::getNode())
                 ->append(DownloadConfiguration::getNode())
                 ->append(ReloadConfiguration::getNode())
