@@ -186,6 +186,7 @@ const photoBooth = (function () {
                 return;
             }
             idleOverlay.removeClass('idle-overlay--active');
+            idleOverlay.css('display', 'none');
             startPage.removeClass('stage--idle');
             clearTimeout(idleSwitchTimeout);
             if (idleVideo.length) {
@@ -258,6 +259,7 @@ const photoBooth = (function () {
 
             startPage.addClass('stage--idle');
             idleOverlay.addClass('idle-overlay--active');
+            idleOverlay.css('display', 'flex');
 
             clearTimeout(idleSwitchTimeout);
             if ((mode === 'folder' || mode === 'gallery') && idleSwitchMs > 0) {
