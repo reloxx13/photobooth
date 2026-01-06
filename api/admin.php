@@ -151,6 +151,14 @@ if ($action === 'reset') {
     $newConfig['background']['admin']    = $normalizePath($newConfig['background']['admin'] ?? null);
     $newConfig['background']['chroma']   = $normalizePath($newConfig['background']['chroma'] ?? null);
     $newConfig['collage']['placeholderpath'] = $normalizePath($newConfig['collage']['placeholderpath'] ?? null);
+    $newConfig['screensaver']['image_source']   = $normalizePath($newConfig['screensaver']['image_source'] ?? null);
+    $newConfig['screensaver']['video_source']   = $normalizePath($newConfig['screensaver']['video_source'] ?? null);
+    if (isset($newConfig['screensaver']['switch_minutes'])) {
+        $newConfig['screensaver']['switch_minutes'] = (int)$newConfig['screensaver']['switch_minutes'];
+    }
+    if (isset($newConfig['screensaver']['timeout_minutes'])) {
+        $newConfig['screensaver']['timeout_minutes'] = (int)$newConfig['screensaver']['timeout_minutes'];
+    }
 
     // Fonts selected via font picker
     $newConfig['textonpicture']['font'] = $normalizePath($newConfig['textonpicture']['font'] ?? null);
@@ -185,6 +193,11 @@ if ($action === 'reset') {
         $newConfig['login']['password'] = null;
         $newConfig['login']['keypad'] = false;
         $newConfig['login']['pin'] = '';
+    }
+
+    // Normalize screensaver boolean values (checkbox submits strings)
+    if (isset($newConfig['screensaver']['enabled'])) {
+        $newConfig['screensaver']['enabled'] = filter_var($newConfig['screensaver']['enabled'], FILTER_VALIDATE_BOOLEAN);
     }
 
     if (isset($newConfig['login']['rental_keypad']) && $newConfig['login']['rental_keypad'] == true) {
@@ -391,7 +404,7 @@ if ($action === 'reset') {
             'message' => 'New config saved.',
         ]);
     } catch (\Exception $exception) {
-        $logger->error('ERROR: Config can not be saved!');
+        $logger->error('ERROR: Config can not be saved!', ['error' => $exception->getMessage()]);
         echo json_encode([
             'status' => 'error',
             'message' => $exception->getMessage(),

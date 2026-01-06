@@ -1,6 +1,7 @@
 /* eslint n/no-unsupported-features/node-builtins: "off" */
 /* globals initPhotoSwipeFromDOM initRemoteBuzzerFromDOM processChromaImage remoteBuzzerClient rotaryController globalGalleryHandle photoboothTools photoboothPreview virtualKeyboard */
 
+/* global createScreensaver */
 const photoBooth = (function () {
     const PhotoStyle = {
             PHOTO: 'photo',
@@ -40,6 +41,12 @@ const photoBooth = (function () {
         loaderMessage = loader.find('.stage-message'),
         loaderImage = loader.find('.stage-image'),
         resultPage = $('.stage[data-stage="result"]'),
+        screensaverOverlay = $('#screensaver-overlay'),
+        screensaverVideo = $('#screensaver-video'),
+        screensaverImage = $('#screensaver-image'),
+        screensaverTextTop = $('#screensaver-text-top'),
+        screensaverTextCenter = $('#screensaver-text-center'),
+        screensaverTextBottom = $('#screensaver-text-bottom'),
         previewIpcam = $('#preview--ipcam'),
         previewVideo = $('#preview--video'),
         previewFramePicture = $('#previewframe--picture'),
@@ -58,10 +65,24 @@ const photoBooth = (function () {
             config.preview.asBackground &&
             config.preview.mode === PreviewMode.DEVICE.valueOf() &&
             ((config.commands.preview && !config.preview.bsm) || !config.commands.preview),
-        timeToLive = config.picture.time_to_live * 1000,
+        timeToLive = parseInt(config.picture.time_to_live, 10) * 1000,
         continuousCollageTime = config.collage.continuous_time * 1000,
         retryTimeout = config.picture.retry_timeout * 1000,
-        notificationTimeout = config.ui.notification_timeout * 1000;
+        notificationTimeout = config.ui.notification_timeout * 1000,
+        screensaverMode = config.screensaver.mode,
+        screensaverEnabled =
+            config.screensaver.enabled &&
+            config.screensaver.timeout_minutes > 0 &&
+            (screensaverMode === 'gallery' ||
+                screensaverMode === 'folder' ||
+                (screensaverMode === 'video' ? !!config.screensaver.video_source : !!config.screensaver.image_source)),
+        screensaverTimeoutMs = (config.screensaver.timeout_minutes || 0) * 60000,
+        screensaverSwitchMs = (config.screensaver.switch_minutes || 1) * 60000,
+        urlSafe = (src) => (src ? encodeURI(src) : '');
+
+    if (!config.screensaver.text_position) {
+        config.screensaver.text_position = 'center';
+    }
 
     let timeOut,
         chromaFile = '',
@@ -72,6 +93,8 @@ const photoBooth = (function () {
         startTime,
         endTime,
         totalTime;
+
+    const galleryFallbackSource = () => config.screensaver.image_source || '';
 
     api.takingPic = false;
     api.nextCollageNumber = 0;
@@ -84,7 +107,7 @@ const photoBooth = (function () {
     };
 
     api.resetTimeOut = function () {
-        if (timeToLive == 0) {
+        if (timeToLive === 0) {
             return;
         }
         clearTimeout(timeOut);
@@ -136,7 +159,28 @@ const photoBooth = (function () {
         rotaryController.focusSet(startPage);
 
         initPhotoSwipeFromDOM('#galimages');
+
+        api.screensaver.resetTimer();
     };
+
+    api.screensaver = createScreensaver({
+        config,
+        environment,
+        startPage,
+        overlay: screensaverOverlay,
+        videoEl: screensaverVideo,
+        imageEl: screensaverImage,
+        textTop: screensaverTextTop,
+        textCenter: screensaverTextCenter,
+        textBottom: screensaverTextBottom,
+        screensaverEnabled,
+        screensaverMode,
+        screensaverTimeoutMs,
+        screensaverSwitchMs,
+        urlSafe,
+        galleryFallbackSource,
+        photoboothTools
+    });
 
     api.navbar = {
         open: function () {
@@ -503,6 +547,7 @@ const photoBooth = (function () {
         videoBackground.hide();
         startPage.removeClass('stage--active');
         loader.addClass('stage--active');
+        api.screensaver.hide();
 
         if (config.get_request.countdown) {
             let getMode;
@@ -1250,6 +1295,8 @@ const photoBooth = (function () {
         if (config.commands.post_photo) {
             api.shellCommand('post-command', filename);
         }
+
+        api.screensaver.resetTimer();
     };
 
     api.addImage = function (imageName) {
@@ -1459,6 +1506,17 @@ const photoBooth = (function () {
         photoboothTools.reloadPage();
         rotaryController.focusSet(startPage);
     });
+
+    if (screensaverEnabled) {
+        $(document).on('click touchstart keydown mousemove', function () {
+            api.screensaver.resetTimer();
+        });
+
+        screensaverOverlay.on('click touchstart', function (e) {
+            e.preventDefault();
+            api.screensaver.resetTimer();
+        });
+    }
 
     $('.cups-button').on('click', function (ev) {
         ev.preventDefault();
