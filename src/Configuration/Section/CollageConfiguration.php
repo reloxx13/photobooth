@@ -49,6 +49,20 @@ final class CollageConfiguration
                         })
                         ->end()
                     ->end()
+                ->booleanNode('allow_selection')->defaultValue(false)->end()
+                ->arrayNode('layouts_enabled')
+                    ->enumPrototype()
+                        ->values(CollageLayoutEnum::cases())
+                        ->beforeNormalization()
+                            ->always(function ($value) {
+                                if (is_string($value)) {
+                                    $value = CollageLayoutEnum::from($value);
+                                }
+                                return $value;
+                            })
+                            ->end()
+                        ->end()
+                    ->end()
                 ->integerNode('limit')
                     ->defaultValue(4)
                     ->min(1)

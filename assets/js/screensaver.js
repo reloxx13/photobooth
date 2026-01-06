@@ -23,6 +23,8 @@
             photoboothTools
         } = deps;
 
+        const fallbackSource = galleryFallbackSource || (() => config.screensaver.image_source || '');
+
         let screensaverTimeout;
         let screensaverSwitchTimeout;
         let screensaverFlip = false;
@@ -75,6 +77,21 @@
 
         api.toggleGalleryText = function toggleGalleryText() {
             const screensaverText = config.screensaver.text;
+            const baseColor = config.screensaver.text_backdrop_color || '#202020';
+            const alpha = parseFloat(config.screensaver.text_backdrop_opacity);
+            const safeAlpha = Number.isFinite(alpha) ? Math.min(Math.max(alpha, 0), 1) : 0.55;
+            const hex = baseColor.replace('#', '');
+            const fullHex =
+                hex.length === 3
+                    ? hex
+                          .split('')
+                          .map((c) => c + c)
+                          .join('')
+                    : hex;
+            const r = parseInt(fullHex.substring(0, 2), 16) || 0;
+            const g = parseInt(fullHex.substring(2, 4), 16) || 0;
+            const b = parseInt(fullHex.substring(4, 6), 16) || 0;
+            const screensaverBackdrop = `rgba(${r}, ${g}, ${b}, ${safeAlpha})`;
             const eventText = [config.event.textLeft, config.event.textRight].filter(Boolean).join(' ').trim();
             const showEvent = screensaverMode === 'gallery';
             const hasScreensaver = !!screensaverText;
@@ -93,6 +110,9 @@
 
             const setSlot = (text) => {
                 resetSlots();
+                [textTop, textCenter, textBottom].forEach(($el) => {
+                    $el.css('background', screensaverBackdrop);
+                });
                 if (showCenter) {
                     textCenter.text(text).show();
                     return;
@@ -177,8 +197,8 @@
             }
         };
 
-        api.show = function show() {
-            if (!screensaverEnabled || !overlay.length) {
+        api.show = function show(force = false) {
+            if ((!force && !screensaverEnabled) || !overlay.length) {
                 return;
             }
             const mode = screensaverMode;
@@ -194,10 +214,7 @@
             }
 
             const source = api.resolveSource();
-            let finalSource = source;
-            if (!source) {
-                finalSource = galleryFallbackSource();
-            }
+            const finalSource = source || fallbackSource();
             if (!finalSource) {
                 api.resetTimer();
                 return;
@@ -221,7 +238,7 @@
                 overlay.css('background-image', 'none');
                 imageEl
                     .one('error', function () {
-                        const fallback = galleryFallbackSource();
+                        const fallback = fallbackSource();
                         if (fallback && fallback !== finalSource) {
                             screensaverLastGallerySource = fallback;
                             $(this).attr('src', urlSafe(fallback));

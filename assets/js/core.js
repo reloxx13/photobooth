@@ -80,10 +80,6 @@ const photoBooth = (function () {
         screensaverSwitchMs = (config.screensaver.switch_minutes || 1) * 60000,
         urlSafe = (src) => (src ? encodeURI(src) : '');
 
-    if (!config.screensaver.text_position) {
-        config.screensaver.text_position = 'center';
-    }
-
     let timeOut,
         chromaFile = '',
         currentCollageFile = '',
@@ -94,13 +90,13 @@ const photoBooth = (function () {
         endTime,
         totalTime;
 
-    const galleryFallbackSource = () => config.screensaver.image_source || '';
-
     api.takingPic = false;
     api.nextCollageNumber = 0;
     api.chromaimage = '';
     api.filename = '';
     api.photoStyle = '';
+    api.collageLayout = config.collage.layout;
+    api.collageLimit = config.collage.limit;
 
     api.isTimeOutPending = function () {
         return typeof timeOut !== 'undefined';
@@ -145,7 +141,6 @@ const photoBooth = (function () {
 
     api.init = function () {
         api.reset();
-
         startPage.addClass('stage--active');
         if (usesBackgroundPreview) {
             photoboothPreview.startVideo(CameraDisplayMode.BACKGROUND);
@@ -161,6 +156,11 @@ const photoBooth = (function () {
         initPhotoSwipeFromDOM('#galimages');
 
         api.screensaver.resetTimer();
+
+        const params = new URLSearchParams(window.location.search);
+        if (params.has('screensaverPreview')) {
+            api.screensaver.show(true);
+        }
     };
 
     api.screensaver = createScreensaver({
@@ -178,7 +178,6 @@ const photoBooth = (function () {
         screensaverTimeoutMs,
         screensaverSwitchMs,
         urlSafe,
-        galleryFallbackSource,
         photoboothTools
     });
 
@@ -328,7 +327,7 @@ const photoBooth = (function () {
                         '<br>' +
                         (api.nextCollageNumber + 1) +
                         ' / ' +
-                        config.collage.limit;
+                        api.collageLimit;
                     labelElement.style.textAlign = 'center';
                     element.appendChild(labelElement);
                 } else {
@@ -606,6 +605,7 @@ const photoBooth = (function () {
         if (api.photoStyle === PhotoStyle.COLLAGE) {
             data.file = currentCollageFile;
             data.collageNumber = api.nextCollageNumber;
+            data.collageLimit = api.collageLimit;
         }
 
         if (api.photoStyle === PhotoStyle.CHROMA) {
@@ -681,10 +681,10 @@ const photoBooth = (function () {
                     loaderImage.show();
 
                     photoboothTools.console.logDev(
-                        'Taken collage photo number: ' + (result.current + 1) + ' / ' + result.limit
+                        'Taken collage photo number: ' + (result.current + 1) + ' / ' + api.collageLimit
                     );
 
-                    if (result.current + 1 < result.limit) {
+                    if (result.current + 1 < api.collageLimit) {
                         photoboothTools.console.logDev('core: initialize Media.');
                         photoboothPreview.initializeMedia();
                         api.takingPic = false;
@@ -695,7 +695,7 @@ const photoBooth = (function () {
                         setTimeout(() => {
                             api.clearLoaderImage();
                             imageUrl = '';
-                            if (result.current + 1 < result.limit) {
+                            if (result.current + 1 < api.collageLimit) {
                                 api.thrill(PhotoStyle.COLLAGE);
                             } else {
                                 currentCollageFile = '';
@@ -705,7 +705,7 @@ const photoBooth = (function () {
                         }, continuousCollageTime);
                     } else {
                         // collage with interruption
-                        if (result.current + 1 < result.limit) {
+                        if (result.current + 1 < api.collageLimit) {
                             const takePictureButton = $(
                                 '<button type="button" class="button collageNext rotaryfocus" id="btnCollageNext">'
                             );
@@ -935,7 +935,9 @@ const photoBooth = (function () {
             data: {
                 file: result.file,
                 filter: imgFilter,
-                style: api.photoStyle
+                style: api.photoStyle,
+                collageLayout: api.collageLayout,
+                collageLimit: api.collageLimit
             },
             success: (data) => {
                 setFiltersEnabled(true);
@@ -1448,6 +1450,12 @@ const photoBooth = (function () {
 
     $('.takeCollage, .newcollage').on('click', function (e) {
         e.preventDefault();
+        if (config.collage.enabled && config.collage.allow_selection && $('#collageSelectorModal').length) {
+            $('#collageSelectorModal').data('pending-start', true);
+            $('#collageSelectorModal').removeClass('hidden').attr('aria-hidden', 'false');
+            $(this).trigger('blur');
+            return;
+        }
         api.thrill(PhotoStyle.COLLAGE);
         $(this).trigger('blur');
     });
@@ -1656,6 +1664,41 @@ const photoBooth = (function () {
     if (config.dev.loglevel > 0) {
         $(this).on('contextmenu', function (e) {
             e.preventDefault();
+        });
+    }
+
+    if (
+        typeof onStandaloneGalleryView === 'undefined' &&
+        typeof onCaptureChromaView === 'undefined' &&
+        config.collage.enabled &&
+        config.collage.allow_selection
+    ) {
+        const collageModal = $('#collageSelectorModal');
+        const closeBtn = $('#collageSelectorClose');
+        const optionButtons = $('.collageSelector__option');
+
+        // Move modal to body so it isn't hidden by stage visibility
+        if (collageModal.length) {
+            $('body').append(collageModal.detach());
+        }
+
+        const setSelection = (layout, limit) => {
+            api.collageLayout = layout;
+            api.collageLimit = parseInt(limit, 10);
+        };
+
+        const closeModal = () => {
+            collageModal.addClass('hidden');
+            collageModal.attr('aria-hidden', 'true');
+        };
+
+        closeBtn.on('click', closeModal);
+
+        optionButtons.on('click', function () {
+            const button = $(this);
+            setSelection(button.data('layout'), button.data('limit'));
+            closeModal();
+            api.thrill(PhotoStyle.COLLAGE);
         });
     }
 

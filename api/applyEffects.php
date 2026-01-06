@@ -37,6 +37,15 @@ try {
         throw new \Exception('Invalid or missing style parameter');
     }
 
+    if (isset($_POST['collageLayout'])) {
+        $config['collage']['layout'] = $_POST['collageLayout'];
+
+    }
+
+    $limitData = Collage::calculateLimit($config['collage'], $logger);
+    $config['collage']['limit'] = $limitData['limit'];
+    $config['collage']['placeholder'] = $limitData['placeholderEnabled'];
+
     $vars['style'] = $_POST['style'];
 
     $vars['imageFilter'] = null;

@@ -10,24 +10,23 @@ use Photobooth\Utility\PathUtility;
             <div class="names<?= ($config['ui']['decore_lines']) ? ' names--decoration' : '' ?>">
                 <div class="names-inner">
                     <?php if ($config['event']['enabled']): ?>
-                        <h1>
+                        <h1 class="event-text">
                             <?= $config['event']['textLeft'] ?>
                             <i class="fa <?= $config['event']['symbol'] ?>" aria-hidden="true"></i>
                             <?= $config['event']['textRight'] ?>
-                            <?php if ($config['start_screen']['title_visible']): ?>
-                            <br>
-                            <?= $config['start_screen']['title'] ?>
-                            <?php endif; ?>
                         </h1>
+                        <?php if ($config['start_screen']['title_visible']): ?>
+                            <h1 class="start-text"><?= $config['start_screen']['title'] ?></h1>
+                        <?php endif; ?>
                         <?php if ($config['start_screen']['subtitle_visible']): ?>
-                            <h2><?= $config['start_screen']['subtitle'] ?></h2>
+                            <h2 class="start-text"><?= $config['start_screen']['subtitle'] ?></h2>
                         <?php endif; ?>
                     <?php else: ?>
                         <?php if ($config['start_screen']['title_visible']): ?>
-                        <h1><?= $config['start_screen']['title'] ?></h1>
+                        <h1 class="start-text"><?= $config['start_screen']['title'] ?></h1>
                         <?php endif; ?>
                         <?php if ($config['start_screen']['subtitle_visible']): ?>
-                        <h2><?= $config['start_screen']['subtitle'] ?></h2>
+                        <h2 class="start-text"><?= $config['start_screen']['subtitle'] ?></h2>
                         <?php endif; ?>
                     <?php endif; ?>
                 </div>
@@ -38,6 +37,9 @@ if ($config['ui']['selfie_mode']) {
     include PathUtility::getAbsolutePath('template/components/selfieAction.php');
 } else {
     include PathUtility::getAbsolutePath('template/components/actionBtn.php');
+    if ($config['collage']['enabled'] && $config['collage']['allow_selection']) {
+        include PathUtility::getAbsolutePath('template/components/collageSelection.php');
+    }
 }
 ?>
     </div>

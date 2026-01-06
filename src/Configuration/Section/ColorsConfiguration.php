@@ -21,8 +21,6 @@ final class ColorsConfiguration
                 ->scalarNode('highlight')->defaultValue('#8d9fd4')->end()
                 ->scalarNode('font')->defaultValue('#c9c9c9')->end()
                 ->scalarNode('font_secondary')->defaultValue('#333333')->end()
-                ->scalarNode('button_font')->defaultValue('#ffffff')->end()
-                ->scalarNode('start_font')->defaultValue('#333333')->end()
                 ->scalarNode('panel')->defaultValue('#1b3faa')->end()
                 ->scalarNode('border')->defaultValue('#eeeeee')->end()
                 ->scalarNode('box')->defaultValue('#e8ebf6')->end()
