@@ -251,3 +251,9 @@
     }
   }
 }
+
+/* Respect iOS safe areas when viewport-fit=cover hides the status bar */
+body,
+.stage {
+  padding-top: env(safe-area-inset-top, 0);
+}
