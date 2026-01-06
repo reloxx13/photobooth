@@ -20,7 +20,7 @@ include PathUtility::getAbsolutePath('template/components/main.defaults.php');
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="msapplication-TileColor" content="<?= $config['colors']['primary'] ?>">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="<?= $config['colors']['status_bar'] ?? '#000000' ?>">
 
     <title><?= $pageTitle ?></title>
 

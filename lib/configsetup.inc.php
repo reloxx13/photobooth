@@ -3025,6 +3025,14 @@ return [
             'placeholder' => $defaultConfig['colors']['box'],
             'value' => $config['colors']['box'],
         ],
+        'colors_status_bar' => [
+            'view' => 'expert',
+            'type' => 'color',
+            'name' => 'colors[status_bar]',
+            'data-theme-field' => 'true',
+            'placeholder' => $defaultConfig['colors']['status_bar'],
+            'value' => $config['colors']['status_bar'],
+        ],
         'colors_gallery_button' => [
             'view' => 'expert',
             'type' => 'color',

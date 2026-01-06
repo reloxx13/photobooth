@@ -26,6 +26,7 @@ final class ColorsConfiguration
                 ->scalarNode('panel')->defaultValue('#1b3faa')->end()
                 ->scalarNode('border')->defaultValue('#eeeeee')->end()
                 ->scalarNode('box')->defaultValue('#e8ebf6')->end()
+                ->scalarNode('status_bar')->defaultValue('#000000')->end()
                 ->scalarNode('gallery_button')->defaultValue('#ffffff')->end()
             ->end();
     }
