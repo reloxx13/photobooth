@@ -190,9 +190,9 @@ if ($action === 'reset') {
             $logger->debug('Password not set. Login disabled.', $newConfig['login']);
         }
     } else {
-    $newConfig['login']['password'] = null;
-    $newConfig['login']['keypad'] = false;
-    $newConfig['login']['pin'] = '';
+        $newConfig['login']['password'] = null;
+        $newConfig['login']['keypad'] = false;
+        $newConfig['login']['pin'] = '';
     }
 
     // Normalize screensaver boolean values (checkbox submits strings)

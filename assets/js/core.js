@@ -44,6 +44,7 @@ const photoBooth = (function () {
         screensaverVideo = $('#screensaver-video'),
         screensaverImage = $('#screensaver-image'),
         screensaverTextTop = $('#screensaver-text-top'),
+        screensaverTextCenter = $('#screensaver-text-center'),
         screensaverTextBottom = $('#screensaver-text-bottom'),
         previewIpcam = $('#preview--ipcam'),
         previewVideo = $('#preview--video'),
@@ -63,7 +64,7 @@ const photoBooth = (function () {
             config.preview.asBackground &&
             config.preview.mode === PreviewMode.DEVICE.valueOf() &&
             ((config.commands.preview && !config.preview.bsm) || !config.commands.preview),
-        timeToLive = config.picture.time_to_live * 1000,
+        timeToLive = parseInt(config.picture.time_to_live) * 1000,
         continuousCollageTime = config.collage.continuous_time * 1000,
         retryTimeout = config.picture.retry_timeout * 1000,
         notificationTimeout = config.ui.notification_timeout * 1000,
@@ -75,12 +76,9 @@ const photoBooth = (function () {
                 screensaverMode === 'folder' ||
                 (screensaverMode === 'video' ? !!config.screensaver.video_source : !!config.screensaver.image_source)),
         screensaverTimeoutMs = (config.screensaver.timeout_minutes || 0) * 60000,
-        screensaverSwitchMs = (config.screensaver.switch_minutes || 1) * 60000;
+        screensaverSwitchMs = (config.screensaver.switch_minutes || 1) * 60000,
+        urlSafe = (src) => (src ? encodeURI(src) : '');
 
-    // Backward compatibility: allow old gallery_text config
-    if (!config.screensaver.text && config.screensaver.gallery_text) {
-        config.screensaver.text = config.screensaver.gallery_text;
-    }
     if (!config.screensaver.text_position) {
         config.screensaver.text_position = 'center';
     }
@@ -99,6 +97,8 @@ const photoBooth = (function () {
         screensaverFlip = false,
         screensaverLastGallerySource = '';
 
+    const galleryFallbackSource = () => config.screensaver.image_source || '';
+
     api.takingPic = false;
     api.nextCollageNumber = 0;
     api.chromaimage = '';
@@ -110,7 +110,7 @@ const photoBooth = (function () {
     };
 
     api.resetTimeOut = function () {
-        if (timeToLive == 0) {
+        if (timeToLive === 0) {
             return;
         }
         clearTimeout(timeOut);
@@ -167,14 +167,6 @@ const photoBooth = (function () {
     };
 
     api.screensaver = {
-        pickImageFromGallery: function () {
-            const anchors = $('#galimages a');
-            if (!anchors.length) {
-                return '';
-            }
-            const randomIndex = Math.floor(Math.random() * anchors.length);
-            return $(anchors[randomIndex]).attr('href');
-        },
         resolveSource: function () {
             const base = environment.publicFolders.api;
             switch (screensaverMode) {
@@ -183,9 +175,9 @@ const photoBooth = (function () {
                 case 'image':
                     return config.screensaver.image_source;
                 case 'folder':
-                    return base + '/randomImg.php?dir=' + encodeURIComponent('screensavers');
+                    return base + '/randomImg.php?dir=' + encodeURIComponent('screensavers') + '&t=' + Date.now();
                 case 'gallery':
-                    return api.screensaver.pickImageFromGallery() || config.screensaver.image_source;
+                    return base + '/randomImg.php?dir=' + encodeURIComponent('data/images') + '&t=' + Date.now();
                 default:
                     return '';
             }
@@ -197,7 +189,8 @@ const photoBooth = (function () {
             screensaverOverlay.removeClass('screensaver-overlay--active');
             screensaverOverlay.css('display', 'none');
             startPage.removeClass('stage--screensaver');
-            clearTimeout(screensaverSwitchTimeout);
+            clearInterval(screensaverSwitchTimeout);
+
             if (screensaverVideo.length) {
                 const vid = screensaverVideo.get(0);
                 vid.pause();
@@ -206,6 +199,7 @@ const photoBooth = (function () {
             }
             screensaverImage.hide().attr('src', '');
             screensaverTextTop.text('').hide();
+            screensaverTextCenter.text('').hide();
             screensaverTextBottom.text('').hide();
         },
         toggleGalleryText: function () {
@@ -215,7 +209,6 @@ const photoBooth = (function () {
             const hasScreensaver = !!screensaverText;
             const hasEvent = showEvent && !!eventText;
 
-            // pick position per config
             const position = config.screensaver.text_position || 'center';
             const showTop = position === 'top-center';
             const showCenter = position === 'center';
@@ -223,13 +216,14 @@ const photoBooth = (function () {
 
             const resetSlots = () => {
                 screensaverTextTop.removeClass('screensaver-overlay__text--center').hide().text('');
+                screensaverTextCenter.hide().text('');
                 screensaverTextBottom.hide().text('');
             };
 
             const setSlot = (text) => {
                 resetSlots();
                 if (showCenter) {
-                    screensaverTextTop.addClass('screensaver-overlay__text--center').text(text).show();
+                    screensaverTextCenter.text(text).show();
                     return;
                 }
                 if (showTop) {
@@ -246,7 +240,9 @@ const photoBooth = (function () {
                     // place event in the opposite available slot
                     if (showTop && showBottom) {
                         screensaverTextBottom.text(eventText).show();
-                    } else if (showTop || showCenter) {
+                    } else if (showCenter) {
+                        screensaverTextBottom.text(eventText).show();
+                    } else if (showTop) {
                         screensaverTextBottom.text(eventText).show();
                     } else {
                         screensaverTextTop.text(eventText).show();
@@ -255,7 +251,9 @@ const photoBooth = (function () {
                     setSlot(eventText);
                     if (showTop && showBottom) {
                         screensaverTextBottom.text(screensaverText).show();
-                    } else if (showTop || showCenter) {
+                    } else if (showCenter) {
+                        screensaverTextBottom.text(screensaverText).show();
+                    } else if (showTop) {
                         screensaverTextBottom.text(screensaverText).show();
                     } else {
                         screensaverTextTop.text(screensaverText).show();
@@ -272,33 +270,50 @@ const photoBooth = (function () {
 
             screensaverFlip = !screensaverFlip;
         },
-        stepGallery: function () {
-            if (screensaverMode !== 'gallery' || !screensaverOverlay.hasClass('screensaver-overlay--active')) {
-                return;
-            }
+        stepScreensaver: function () {
+            const mode = screensaverOverlay.data('mode') || screensaverMode;
+            photoboothTools.console.logDev('Screensaver: step in mode \'' + mode + '\'');
+
             let nextSource = api.screensaver.resolveSource();
-            const anchors = $('#galimages a');
-            if (anchors.length > 1) {
+            if (!nextSource && mode === 'gallery') {
+                nextSource = galleryFallbackSource();
+            }
+
+            // Try to avoid immediate repeat
+            if (mode === 'gallery' || mode === 'folder') {
                 let guard = 5;
                 while (nextSource === screensaverLastGallerySource && guard > 0) {
                     nextSource = api.screensaver.resolveSource();
                     guard--;
                 }
+                screensaverLastGallerySource = nextSource;
             }
-            screensaverLastGallerySource = nextSource;
+            photoboothTools.console.logDev('Screensaver: next source \'' + nextSource + '\'');
             if (nextSource) {
-                screensaverImage.attr('src', nextSource).show();
+                if (mode === 'folder') {
+                    screensaverOverlay.css('background-image', nextSource ? `url(${urlSafe(nextSource)})` : 'none');
+                } else if (mode === 'gallery') {
+                    screensaverImage
+                        .one('error', function () {
+                            const fallback = galleryFallbackSource();
+                            if (fallback && fallback !== nextSource) {
+                                screensaverLastGallerySource = fallback;
+                                $(this).attr('src', urlSafe(fallback));
+                            }
+                        })
+                        .attr('src', urlSafe(nextSource))
+                        .show();
+                }
             }
-            api.screensaver.toggleGalleryText();
-            clearTimeout(screensaverSwitchTimeout);
-            if (screensaverSwitchMs > 0) {
-                screensaverSwitchTimeout = setTimeout(api.screensaver.show, screensaverSwitchMs);
+            if (mode === 'gallery') {
+                api.screensaver.toggleGalleryText();
             }
         },
         show: function () {
             if (!screensaverEnabled || !screensaverOverlay.length) {
                 return;
             }
+            const mode = screensaverMode;
             if (!startPage.hasClass('stage--active')) {
                 api.screensaver.resetTimer();
                 return;
@@ -310,19 +325,22 @@ const photoBooth = (function () {
                 screensaverOverlay.removeClass('screensaver-overlay--gallery');
             }
 
-            const mode = screensaverMode;
             const source = api.screensaver.resolveSource();
+            let finalSource = source;
             if (!source) {
+                finalSource = galleryFallbackSource();
+            }
+            if (!finalSource) {
                 api.screensaver.resetTimer();
                 return;
             }
             if (mode === 'gallery') {
-                screensaverLastGallerySource = source;
+                screensaverLastGallerySource = finalSource;
             }
 
             if (mode === 'video') {
                 screensaverOverlay.css('background-image', 'none');
-                screensaverVideo.attr('src', source || '');
+                screensaverVideo.attr('src', urlSafe(finalSource));
                 screensaverVideo.show();
                 const vid = screensaverVideo.get(0);
                 vid.play().catch((err) => {
@@ -333,13 +351,22 @@ const photoBooth = (function () {
             } else if (mode === 'gallery') {
                 screensaverVideo.hide();
                 screensaverOverlay.css('background-image', 'none');
-                screensaverImage.attr('src', source).show();
+                screensaverImage
+                    .one('error', function () {
+                        const fallback = galleryFallbackSource();
+                        if (fallback && fallback !== finalSource) {
+                            screensaverLastGallerySource = fallback;
+                            $(this).attr('src', urlSafe(fallback));
+                        }
+                    })
+                    .attr('src', urlSafe(finalSource))
+                    .show();
                 api.screensaver.toggleGalleryText();
             } else {
                 screensaverVideo.hide();
                 screensaverImage.hide();
                 api.screensaver.toggleGalleryText();
-                screensaverOverlay.css('background-image', source ? `url(${source})` : 'none');
+                screensaverOverlay.css('background-image', finalSource ? `url(${urlSafe(finalSource)})` : 'none');
                 screensaverOverlay.css('background-size', 'cover');
             }
 
@@ -347,33 +374,10 @@ const photoBooth = (function () {
             screensaverOverlay.addClass('screensaver-overlay--active');
             screensaverOverlay.css('display', 'flex');
 
-            clearTimeout(screensaverSwitchTimeout);
+            clearInterval(screensaverSwitchTimeout);
             if ((mode === 'folder' || mode === 'gallery') && screensaverSwitchMs > 0) {
-                screensaverSwitchTimeout = setTimeout(function nextIdleFrame() {
-                    let nextSource = api.screensaver.resolveSource();
-                    if (mode === 'gallery') {
-                        const anchors = $('#galimages a');
-                        if (anchors.length > 1) {
-                            // Try to avoid immediate repeat
-                            let guard = 5;
-                            while (nextSource === screensaverLastGallerySource && guard > 0) {
-                                nextSource = api.screensaver.resolveSource();
-                                guard--;
-                            }
-                        }
-                        screensaverLastGallerySource = nextSource;
-                    }
-                    if (nextSource) {
-                        if (mode === 'folder') {
-                            screensaverOverlay.css('background-image', `url(${nextSource})`);
-                        } else if (mode === 'gallery') {
-                            screensaverImage.attr('src', nextSource).show();
-                        }
-                    }
-                    if (mode === 'gallery') {
-                        api.screensaver.toggleGalleryText();
-                    }
-                    screensaverSwitchTimeout = setTimeout(nextIdleFrame, screensaverSwitchMs);
+                screensaverSwitchTimeout = setInterval(function nextIdleFrame() {
+                    api.screensaver.stepScreensaver();
                 }, screensaverSwitchMs);
             }
         },

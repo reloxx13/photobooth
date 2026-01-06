@@ -43,15 +43,15 @@ if ($config['ui']['selfie_mode']) {
     </div>
     <?php
     $screensaverMode = $config['screensaver']['mode'] ?? 'image';
-    $screensaverImageSource = $config['screensaver']['image_source'] ?? '';
-    $screensaverVideoSource = $config['screensaver']['video_source'] ?? '';
+$screensaverImageSource = $config['screensaver']['image_source'] ?? '';
+$screensaverVideoSource = $config['screensaver']['video_source'] ?? '';
 
-    $screensaverSource = '';
-    if ($screensaverMode === 'image' && $screensaverImageSource) {
-        $screensaverSource = PathUtility::getPublicPath($screensaverImageSource);
-    } elseif ($screensaverMode === 'video' && $screensaverVideoSource) {
-        $screensaverSource = PathUtility::getPublicPath($screensaverVideoSource);
-    }
+$screensaverSource = '';
+if ($screensaverMode === 'image' && $screensaverImageSource) {
+    $screensaverSource = PathUtility::getPublicPath($screensaverImageSource);
+} elseif ($screensaverMode === 'video' && $screensaverVideoSource) {
+    $screensaverSource = PathUtility::getPublicPath($screensaverVideoSource);
+}
 ?>
     <div
         id="screensaver-overlay"
@@ -61,6 +61,7 @@ if ($config['ui']['selfie_mode']) {
         style="display: none;"
     >
         <div id="screensaver-text-top" class="screensaver-overlay__text screensaver-overlay__text--top"></div>
+        <div id="screensaver-text-center" class="screensaver-overlay__text screensaver-overlay__text--center"></div>
         <img id="screensaver-image" class="screensaver-overlay__image" alt="screensaver">
         <video id="screensaver-video" loop muted playsinline></video>
         <div id="screensaver-text-bottom" class="screensaver-overlay__text screensaver-overlay__text--bottom"></div>
