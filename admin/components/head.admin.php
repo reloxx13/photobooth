@@ -12,7 +12,7 @@ $assetService = AssetService::getInstance();
     <meta name="viewport" content="width=device-width, initial-scale=1.0 user-scalable=no, viewport-fit=cover">
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="msapplication-TileColor" content="<?=$config['colors']['primary']?>">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="<?=$config['colors']['status_bar'] ?? '#000000'?>">
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
