@@ -40,11 +40,11 @@ const photoBooth = (function () {
         loaderMessage = loader.find('.stage-message'),
         loaderImage = loader.find('.stage-image'),
         resultPage = $('.stage[data-stage="result"]'),
-        idleOverlay = $('#idle-overlay'),
-        idleVideo = $('#idle-video'),
-        idleImage = $('#idle-image'),
-        idleTextTop = $('#idle-text-top'),
-        idleTextBottom = $('#idle-text-bottom'),
+        screensaverOverlay = $('#screensaver-overlay'),
+        screensaverVideo = $('#screensaver-video'),
+        screensaverImage = $('#screensaver-image'),
+        screensaverTextTop = $('#screensaver-text-top'),
+        screensaverTextBottom = $('#screensaver-text-bottom'),
         previewIpcam = $('#preview--ipcam'),
         previewVideo = $('#preview--video'),
         previewFramePicture = $('#previewframe--picture'),
@@ -67,15 +67,23 @@ const photoBooth = (function () {
         continuousCollageTime = config.collage.continuous_time * 1000,
         retryTimeout = config.picture.retry_timeout * 1000,
         notificationTimeout = config.ui.notification_timeout * 1000,
-        idleMode = config.idle.mode,
-        idleEnabled =
-            config.idle.enabled &&
-            config.idle.timeout_minutes > 0 &&
-            (idleMode === 'gallery' ||
-                idleMode === 'folder' ||
-                (idleMode === 'video' ? !!config.idle.video_source : !!config.idle.image_source)),
-        idleTimeoutMs = (config.idle.timeout_minutes || 0) * 60000,
-        idleSwitchMs = (config.idle.switch_minutes || 1) * 60000;
+        screensaverMode = config.screensaver.mode,
+        screensaverEnabled =
+            config.screensaver.enabled &&
+            config.screensaver.timeout_minutes > 0 &&
+            (screensaverMode === 'gallery' ||
+                screensaverMode === 'folder' ||
+                (screensaverMode === 'video' ? !!config.screensaver.video_source : !!config.screensaver.image_source)),
+        screensaverTimeoutMs = (config.screensaver.timeout_minutes || 0) * 60000,
+        screensaverSwitchMs = (config.screensaver.switch_minutes || 1) * 60000;
+
+    // Backward compatibility: allow old gallery_text config
+    if (!config.screensaver.text && config.screensaver.gallery_text) {
+        config.screensaver.text = config.screensaver.gallery_text;
+    }
+    if (!config.screensaver.text_position) {
+        config.screensaver.text_position = 'center';
+    }
 
     let timeOut,
         chromaFile = '',
@@ -86,10 +94,10 @@ const photoBooth = (function () {
         startTime,
         endTime,
         totalTime,
-        idleTimeout,
-        idleSwitchTimeout,
-        idleFlip = false,
-        idleLastGallerySource = '';
+        screensaverTimeout,
+        screensaverSwitchTimeout,
+        screensaverFlip = false,
+        screensaverLastGallerySource = '';
 
     api.takingPic = false;
     api.nextCollageNumber = 0;
@@ -155,10 +163,10 @@ const photoBooth = (function () {
 
         initPhotoSwipeFromDOM('#galimages');
 
-        api.idle.resetTimer();
+        api.screensaver.resetTimer();
     };
 
-    api.idle = {
+    api.screensaver = {
         pickImageFromGallery: function () {
             const anchors = $('#galimages a');
             if (!anchors.length) {
@@ -169,187 +177,213 @@ const photoBooth = (function () {
         },
         resolveSource: function () {
             const base = environment.publicFolders.api;
-            switch (idleMode) {
+            switch (screensaverMode) {
                 case 'video':
-                    return config.idle.video_source;
+                    return config.screensaver.video_source;
                 case 'image':
-                    return config.idle.image_source;
+                    return config.screensaver.image_source;
                 case 'folder':
                     return base + '/randomImg.php?dir=' + encodeURIComponent('screensavers');
                 case 'gallery':
-                    return api.idle.pickImageFromGallery() || config.idle.image_source;
+                    return api.screensaver.pickImageFromGallery() || config.screensaver.image_source;
                 default:
                     return '';
             }
         },
         hide: function () {
-            if (!idleOverlay.length) {
+            if (!screensaverOverlay.length) {
                 return;
             }
-            idleOverlay.removeClass('idle-overlay--active');
-            idleOverlay.css('display', 'none');
-            startPage.removeClass('stage--idle');
-            clearTimeout(idleSwitchTimeout);
-            if (idleVideo.length) {
-                const vid = idleVideo.get(0);
+            screensaverOverlay.removeClass('screensaver-overlay--active');
+            screensaverOverlay.css('display', 'none');
+            startPage.removeClass('stage--screensaver');
+            clearTimeout(screensaverSwitchTimeout);
+            if (screensaverVideo.length) {
+                const vid = screensaverVideo.get(0);
                 vid.pause();
                 vid.currentTime = 0;
-                idleVideo.attr('src', '');
+                screensaverVideo.attr('src', '');
             }
-            idleImage.hide().attr('src', '');
-            idleTextTop.text('').hide();
-            idleTextBottom.text('').hide();
+            screensaverImage.hide().attr('src', '');
+            screensaverTextTop.text('').hide();
+            screensaverTextBottom.text('').hide();
         },
         toggleGalleryText: function () {
-            const galleryText = config.idle.gallery_text;
+            const screensaverText = config.screensaver.text;
             const eventText = [config.event.textLeft, config.event.textRight].filter(Boolean).join(' ').trim();
-            const hasGallery = !!galleryText;
-            const hasEvent = !!eventText;
+            const showEvent = screensaverMode === 'gallery';
+            const hasScreensaver = !!screensaverText;
+            const hasEvent = showEvent && !!eventText;
 
-            // nothing to show
-            if (!hasGallery && !hasEvent) {
-                idleTextTop.hide();
-                idleTextBottom.hide();
-                return;
-            }
+            // pick position per config
+            const position = config.screensaver.text_position || 'center';
+            const showTop = position === 'top-center';
+            const showCenter = position === 'center';
+            const showBottom = position === 'bottom-center';
 
-            // If both exist: show both simultaneously and swap positions each call
-            if (hasGallery && hasEvent) {
-                if (idleFlip) {
-                    idleTextTop.text(galleryText).show();
-                    idleTextBottom.text(eventText).show();
+            const resetSlots = () => {
+                screensaverTextTop.removeClass('screensaver-overlay__text--center').hide().text('');
+                screensaverTextBottom.hide().text('');
+            };
+
+            const setSlot = (text) => {
+                resetSlots();
+                if (showCenter) {
+                    screensaverTextTop.addClass('screensaver-overlay__text--center').text(text).show();
+                    return;
+                }
+                if (showTop) {
+                    screensaverTextTop.text(text).show();
+                }
+                if (showBottom) {
+                    screensaverTextBottom.text(text).show();
+                }
+            };
+
+            if (hasScreensaver && hasEvent) {
+                if (screensaverFlip) {
+                    setSlot(screensaverText);
+                    // place event in the opposite available slot
+                    if (showTop && showBottom) {
+                        screensaverTextBottom.text(eventText).show();
+                    } else if (showTop || showCenter) {
+                        screensaverTextBottom.text(eventText).show();
+                    } else {
+                        screensaverTextTop.text(eventText).show();
+                    }
                 } else {
-                    idleTextTop.text(eventText).show();
-                    idleTextBottom.text(galleryText).show();
+                    setSlot(eventText);
+                    if (showTop && showBottom) {
+                        screensaverTextBottom.text(screensaverText).show();
+                    } else if (showTop || showCenter) {
+                        screensaverTextBottom.text(screensaverText).show();
+                    } else {
+                        screensaverTextTop.text(screensaverText).show();
+                    }
                 }
             } else {
-                // Only one text available: place it alternating top/bottom
-                const singleText = hasGallery ? galleryText : eventText;
-                if (idleFlip) {
-                    idleTextTop.text(singleText).show();
-                    idleTextBottom.text('').hide();
+                const singleText = hasScreensaver ? screensaverText : hasEvent ? eventText : '';
+                if (singleText) {
+                    setSlot(singleText);
                 } else {
-                    idleTextBottom.text(singleText).show();
-                    idleTextTop.text('').hide();
+                    resetSlots();
                 }
             }
 
-            idleFlip = !idleFlip;
+            screensaverFlip = !screensaverFlip;
         },
         stepGallery: function () {
-            if (idleMode !== 'gallery' || !idleOverlay.hasClass('idle-overlay--active')) {
+            if (screensaverMode !== 'gallery' || !screensaverOverlay.hasClass('screensaver-overlay--active')) {
                 return;
             }
-            let nextSource = api.idle.resolveSource();
+            let nextSource = api.screensaver.resolveSource();
             const anchors = $('#galimages a');
             if (anchors.length > 1) {
                 let guard = 5;
-                while (nextSource === idleLastGallerySource && guard > 0) {
-                    nextSource = api.idle.resolveSource();
+                while (nextSource === screensaverLastGallerySource && guard > 0) {
+                    nextSource = api.screensaver.resolveSource();
                     guard--;
                 }
             }
-            idleLastGallerySource = nextSource;
+            screensaverLastGallerySource = nextSource;
             if (nextSource) {
-                idleImage.attr('src', nextSource).show();
+                screensaverImage.attr('src', nextSource).show();
             }
-            api.idle.toggleGalleryText();
-            clearTimeout(idleSwitchTimeout);
-            if (idleSwitchMs > 0) {
-                idleSwitchTimeout = setTimeout(api.idle.show, idleSwitchMs);
+            api.screensaver.toggleGalleryText();
+            clearTimeout(screensaverSwitchTimeout);
+            if (screensaverSwitchMs > 0) {
+                screensaverSwitchTimeout = setTimeout(api.screensaver.show, screensaverSwitchMs);
             }
         },
         show: function () {
-            if (!idleEnabled || !idleOverlay.length) {
+            if (!screensaverEnabled || !screensaverOverlay.length) {
                 return;
             }
             if (!startPage.hasClass('stage--active')) {
-                api.idle.resetTimer();
+                api.screensaver.resetTimer();
                 return;
             }
 
             if (mode === 'gallery') {
-                idleOverlay.addClass('idle-overlay--gallery');
+                screensaverOverlay.addClass('screensaver-overlay--gallery');
             } else {
-                idleOverlay.removeClass('idle-overlay--gallery');
+                screensaverOverlay.removeClass('screensaver-overlay--gallery');
             }
 
-            const mode = idleMode;
-            const source = api.idle.resolveSource();
+            const mode = screensaverMode;
+            const source = api.screensaver.resolveSource();
             if (!source) {
-                api.idle.resetTimer();
+                api.screensaver.resetTimer();
                 return;
             }
             if (mode === 'gallery') {
-                idleLastGallerySource = source;
+                screensaverLastGallerySource = source;
             }
 
             if (mode === 'video') {
-                idleOverlay.css('background-image', 'none');
-                idleVideo.attr('src', source || '');
-                idleVideo.show();
-                const vid = idleVideo.get(0);
+                screensaverOverlay.css('background-image', 'none');
+                screensaverVideo.attr('src', source || '');
+                screensaverVideo.show();
+                const vid = screensaverVideo.get(0);
                 vid.play().catch((err) => {
                     photoboothTools.console.logDev('Idle video play failed: ' + err);
                 });
-                idleImage.hide();
-                idleTextTop.hide();
-                idleTextBottom.hide();
+                screensaverImage.hide();
+                api.screensaver.toggleGalleryText();
             } else if (mode === 'gallery') {
-                idleVideo.hide();
-                idleOverlay.css('background-image', 'none');
-                idleImage.attr('src', source).show();
-                api.idle.toggleGalleryText();
+                screensaverVideo.hide();
+                screensaverOverlay.css('background-image', 'none');
+                screensaverImage.attr('src', source).show();
+                api.screensaver.toggleGalleryText();
             } else {
-                idleVideo.hide();
-                idleImage.hide();
-                idleTextTop.hide();
-                idleTextBottom.hide();
-                idleOverlay.css('background-image', source ? `url(${source})` : 'none');
-                idleOverlay.css('background-size', 'cover');
+                screensaverVideo.hide();
+                screensaverImage.hide();
+                api.screensaver.toggleGalleryText();
+                screensaverOverlay.css('background-image', source ? `url(${source})` : 'none');
+                screensaverOverlay.css('background-size', 'cover');
             }
 
-            startPage.addClass('stage--idle');
-            idleOverlay.addClass('idle-overlay--active');
-            idleOverlay.css('display', 'flex');
+            startPage.addClass('stage--screensaver');
+            screensaverOverlay.addClass('screensaver-overlay--active');
+            screensaverOverlay.css('display', 'flex');
 
-            clearTimeout(idleSwitchTimeout);
-            if ((mode === 'folder' || mode === 'gallery') && idleSwitchMs > 0) {
-                idleSwitchTimeout = setTimeout(function nextIdleFrame() {
-                    let nextSource = api.idle.resolveSource();
+            clearTimeout(screensaverSwitchTimeout);
+            if ((mode === 'folder' || mode === 'gallery') && screensaverSwitchMs > 0) {
+                screensaverSwitchTimeout = setTimeout(function nextIdleFrame() {
+                    let nextSource = api.screensaver.resolveSource();
                     if (mode === 'gallery') {
                         const anchors = $('#galimages a');
                         if (anchors.length > 1) {
                             // Try to avoid immediate repeat
                             let guard = 5;
-                            while (nextSource === idleLastGallerySource && guard > 0) {
-                                nextSource = api.idle.resolveSource();
+                            while (nextSource === screensaverLastGallerySource && guard > 0) {
+                                nextSource = api.screensaver.resolveSource();
                                 guard--;
                             }
                         }
-                        idleLastGallerySource = nextSource;
+                        screensaverLastGallerySource = nextSource;
                     }
                     if (nextSource) {
                         if (mode === 'folder') {
-                            idleOverlay.css('background-image', `url(${nextSource})`);
+                            screensaverOverlay.css('background-image', `url(${nextSource})`);
                         } else if (mode === 'gallery') {
-                            idleImage.attr('src', nextSource).show();
+                            screensaverImage.attr('src', nextSource).show();
                         }
                     }
                     if (mode === 'gallery') {
-                        api.idle.toggleGalleryText();
+                        api.screensaver.toggleGalleryText();
                     }
-                    idleSwitchTimeout = setTimeout(nextIdleFrame, idleSwitchMs);
-                }, idleSwitchMs);
+                    screensaverSwitchTimeout = setTimeout(nextIdleFrame, screensaverSwitchMs);
+                }, screensaverSwitchMs);
             }
         },
         resetTimer: function () {
-            if (!idleEnabled) {
+            if (!screensaverEnabled) {
                 return;
             }
-            clearTimeout(idleTimeout);
-            api.idle.hide();
-            idleTimeout = setTimeout(api.idle.show, idleTimeoutMs);
+            clearTimeout(screensaverTimeout);
+            api.screensaver.hide();
+            screensaverTimeout = setTimeout(api.screensaver.show, screensaverTimeoutMs);
         }
     };
 
@@ -718,7 +752,7 @@ const photoBooth = (function () {
         videoBackground.hide();
         startPage.removeClass('stage--active');
         loader.addClass('stage--active');
-        api.idle.hide();
+        api.screensaver.hide();
 
         if (config.get_request.countdown) {
             let getMode;
@@ -1467,7 +1501,7 @@ const photoBooth = (function () {
             api.shellCommand('post-command', filename);
         }
 
-        api.idle.resetTimer();
+        api.screensaver.resetTimer();
     };
 
     api.addImage = function (imageName) {
@@ -1678,14 +1712,14 @@ const photoBooth = (function () {
         rotaryController.focusSet(startPage);
     });
 
-    if (idleEnabled) {
+    if (screensaverEnabled) {
         $(document).on('click touchstart keydown mousemove', function () {
-            api.idle.resetTimer();
+            api.screensaver.resetTimer();
         });
 
-        idleOverlay.on('click touchstart', function (e) {
+        screensaverOverlay.on('click touchstart', function (e) {
             e.preventDefault();
-            api.idle.resetTimer();
+            api.screensaver.resetTimer();
         });
     }
 

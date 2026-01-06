@@ -497,20 +497,20 @@ return [
             'value' => $config['logo']['position'],
         ],
     ],
-    'idle' => [
+    'screensaver' => [
         'view'                 => 'basic',
         'platform'             => 'all',
-        'idle_enabled'         => [
+        'screensaver_enabled'         => [
             'view'  => 'basic',
             'type'  => 'checkbox',
-            'name'  => 'idle[enabled]',
-            'value' => $config['idle']['enabled'],
+            'name'  => 'screensaver[enabled]',
+            'value' => $config['screensaver']['enabled'],
         ],
-        'idle_mode'            => [
+        'screensaver_mode'            => [
             'view'             => 'basic',
             'type'             => 'select',
-            'name'             => 'idle[mode]',
-            'placeholder'      => $defaultConfig['idle']['mode'],
+            'name'        => 'screensaver[mode]',
+            'placeholder' => $defaultConfig['screensaver']['mode'],
             'data-theme-field' => 'true',
             'options'          => [
                 'image'   => 'image',
@@ -518,56 +518,67 @@ return [
                 'folder'  => 'folder',
                 'gallery' => 'gallery',
             ],
-            'value'            => $config['idle']['mode'],
+            'value'       => $config['screensaver']['mode'],
         ],
-        'idle_image_source'    => [
+        'screensaver_image_source'    => [
             'view'             => 'basic',
             'type'             => 'image',
-            'name'             => 'idle[image_source]',
+            'name'        => 'screensaver[image_source]',
             'data-theme-field' => 'true',
-            'placeholder'      => $defaultConfig['idle']['image_source'],
-            'value'            => htmlentities($config['idle']['image_source'] ?? ''),
+            'placeholder' => $defaultConfig['screensaver']['image_source'],
+            'value'       => htmlentities($config['screensaver']['image_source'] ?? ''),
             'paths'            => [
                 PathUtility::getAbsolutePath('private/screensavers'),
             ],
         ],
-        'idle_video_source'    => [
+        'screensaver_video_source'    => [
             'view'             => 'basic',
             'type'             => 'video',
-            'name'             => 'idle[video_source]',
+            'name'        => 'screensaver[video_source]',
             'data-theme-field' => 'true',
-            'placeholder'      => $defaultConfig['idle']['video_source'] ?? '',
-            'value'            => htmlentities($config['idle']['video_source'] ?? ''),
+            'placeholder' => $defaultConfig['screensaver']['video_source'] ?? '',
+            'value'       => htmlentities($config['screensaver']['video_source'] ?? ''),
             'paths'            => [
                 PathUtility::getAbsolutePath('private/screensavers'),
                 PathUtility::getAbsolutePath('private/videos'),
                 PathUtility::getAbsolutePath('resources/videos'),
             ],
         ],
-        'idle_gallery_text'    => [
+        'screensaver_text'    => [
             'view'        => 'basic',
             'type'        => 'input',
-            'name'        => 'idle[gallery_text]',
-            'placeholder' => $defaultConfig['idle']['gallery_text'],
-            'value'       => htmlentities($config['idle']['gallery_text'] ?? ''),
+            'name'        => 'screensaver[text]',
+            'placeholder' => $defaultConfig['screensaver']['text'],
+            'value'       => htmlentities($config['screensaver']['text'] ?? ''),
         ],
-        'idle_timeout_minutes' => [
+        'screensaver_text_position' => [
+            'view'   => 'basic',
+            'type'   => 'select',
+            'name'   => 'screensaver[text_position]',
+            'value'  => $config['screensaver']['text_position'],
+            'options' => [
+                'top-center' => 'Top Center',
+                'center' => 'Center',
+                'bottom-center' => 'Bottom Center',
+            ],
+        ],
+        'screensaver_timeout_minutes' => [
             'view'        => 'basic',
             'type'        => 'number',
-            'name'        => 'idle[timeout_minutes]',
-            'placeholder' => $defaultConfig['idle']['timeout_minutes'],
-            'value'       => $config['idle']['timeout_minutes'],
+            'name'        => 'screensaver[timeout_minutes]',
+            'placeholder' => $defaultConfig['screensaver']['timeout_minutes'],
+            'value'       => $config['screensaver']['timeout_minutes'],
             'range_min'   => 0,
             'range_max'   => 120,
             'range_step'  => 1,
             'unit'        => 'min',
         ],
-        'idle_switch_minutes'  => [
+        'screensaver_switch_minutes'  => [
             'view'        => 'basic',
             'type'        => 'number',
-            'name'        => 'idle[switch_minutes]',
-            'placeholder' => $defaultConfig['idle']['switch_minutes'],
-            'value'       => $config['idle']['switch_minutes'],
+            'name'        => 'screensaver[switch_minutes]',
+            'placeholder' => $defaultConfig['screensaver']['switch_minutes'],
+            'value'       => $config['screensaver']['switch_minutes'],
             'range_min'   => 1,
             'range_max'   => 120,
             'range_step'  => 1,
