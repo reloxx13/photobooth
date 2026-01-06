@@ -42,28 +42,28 @@ if ($config['ui']['selfie_mode']) {
 ?>
     </div>
     <?php
-    $idleMode = $config['idle']['mode'] ?? 'image';
-    $idleImageSource = $config['idle']['image_source'] ?? '';
-    $idleVideoSource = $config['idle']['video_source'] ?? '';
+    $screensaverMode = $config['screensaver']['mode'] ?? 'image';
+    $screensaverImageSource = $config['screensaver']['image_source'] ?? '';
+    $screensaverVideoSource = $config['screensaver']['video_source'] ?? '';
 
-    $idleSource = '';
-    if ($idleMode === 'image' && $idleImageSource) {
-        $idleSource = PathUtility::getPublicPath($idleImageSource);
-    } elseif ($idleMode === 'video' && $idleVideoSource) {
-        $idleSource = PathUtility::getPublicPath($idleVideoSource);
+    $screensaverSource = '';
+    if ($screensaverMode === 'image' && $screensaverImageSource) {
+        $screensaverSource = PathUtility::getPublicPath($screensaverImageSource);
+    } elseif ($screensaverMode === 'video' && $screensaverVideoSource) {
+        $screensaverSource = PathUtility::getPublicPath($screensaverVideoSource);
     }
 ?>
     <div
-        id="idle-overlay"
-        class="idle-overlay"
-        data-mode="<?= $idleMode ?>"
-        data-source="<?= $idleSource ?>"
+        id="screensaver-overlay"
+        class="screensaver-overlay"
+        data-mode="<?= $screensaverMode ?>"
+        data-source="<?= $screensaverSource ?>"
         style="display: none;"
     >
-        <div id="idle-text-top" class="idle-overlay__text idle-overlay__text--top"></div>
-        <img id="idle-image" class="idle-overlay__image" alt="idle">
-        <video id="idle-video" loop muted playsinline></video>
-        <div id="idle-text-bottom" class="idle-overlay__text idle-overlay__text--bottom"></div>
+        <div id="screensaver-text-top" class="screensaver-overlay__text screensaver-overlay__text--top"></div>
+        <img id="screensaver-image" class="screensaver-overlay__image" alt="screensaver">
+        <video id="screensaver-video" loop muted playsinline></video>
+        <div id="screensaver-text-bottom" class="screensaver-overlay__text screensaver-overlay__text--bottom"></div>
     </div>
     <?php include PathUtility::getAbsolutePath('template/components/github-corner.php'); ?>
 </div>

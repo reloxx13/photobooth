@@ -40,11 +40,18 @@ if (!empty($config['background']['admin'])) {
 if (!empty($config['background']['chroma'])) {
     $config['background']['chroma'] = PathUtility::getPublicPath($config['background']['chroma']);
 }
-if (!empty($config['idle']['image_source']) && $config['idle']['mode'] !== 'folder') {
-    $config['idle']['image_source'] = PathUtility::getPublicPath($config['idle']['image_source']);
+if (!empty($config['screensaver']['image_source']) && $config['screensaver']['mode'] !== 'folder') {
+    $config['screensaver']['image_source'] = PathUtility::getPublicPath($config['screensaver']['image_source']);
 }
-if (!empty($config['idle']['video_source'])) {
-    $config['idle']['video_source'] = PathUtility::getPublicPath($config['idle']['video_source']);
+if (!empty($config['screensaver']['video_source'])) {
+    $config['screensaver']['video_source'] = PathUtility::getPublicPath($config['screensaver']['video_source']);
+}
+// Backward compatibility: migrate legacy gallery_text to text
+if (empty($config['screensaver']['text']) && !empty($config['screensaver']['gallery_text'])) {
+    $config['screensaver']['text'] = $config['screensaver']['gallery_text'];
+}
+if (empty($config['screensaver']['text_position'])) {
+    $config['screensaver']['text_position'] = 'center';
 }
 
 echo 'const config = ' . json_encode($config) . ';';

@@ -151,13 +151,13 @@ if ($action === 'reset') {
     $newConfig['background']['admin']    = $normalizePath($newConfig['background']['admin'] ?? null);
     $newConfig['background']['chroma']   = $normalizePath($newConfig['background']['chroma'] ?? null);
     $newConfig['collage']['placeholderpath'] = $normalizePath($newConfig['collage']['placeholderpath'] ?? null);
-    $newConfig['idle']['image_source']   = $normalizePath($newConfig['idle']['image_source'] ?? null);
-    $newConfig['idle']['video_source']   = $normalizePath($newConfig['idle']['video_source'] ?? null);
-    if (isset($newConfig['idle']['switch_minutes'])) {
-        $newConfig['idle']['switch_minutes'] = (int)$newConfig['idle']['switch_minutes'];
+    $newConfig['screensaver']['image_source']   = $normalizePath($newConfig['screensaver']['image_source'] ?? null);
+    $newConfig['screensaver']['video_source']   = $normalizePath($newConfig['screensaver']['video_source'] ?? null);
+    if (isset($newConfig['screensaver']['switch_minutes'])) {
+        $newConfig['screensaver']['switch_minutes'] = (int)$newConfig['screensaver']['switch_minutes'];
     }
-    if (isset($newConfig['idle']['timeout_minutes'])) {
-        $newConfig['idle']['timeout_minutes'] = (int)$newConfig['idle']['timeout_minutes'];
+    if (isset($newConfig['screensaver']['timeout_minutes'])) {
+        $newConfig['screensaver']['timeout_minutes'] = (int)$newConfig['screensaver']['timeout_minutes'];
     }
 
     // Fonts selected via font picker
@@ -195,9 +195,9 @@ if ($action === 'reset') {
     $newConfig['login']['pin'] = '';
     }
 
-    // Normalize idle boolean values (checkbox submits strings)
-    if (isset($newConfig['idle']['enabled'])) {
-        $newConfig['idle']['enabled'] = filter_var($newConfig['idle']['enabled'], FILTER_VALIDATE_BOOLEAN);
+    // Normalize screensaver boolean values (checkbox submits strings)
+    if (isset($newConfig['screensaver']['enabled'])) {
+        $newConfig['screensaver']['enabled'] = filter_var($newConfig['screensaver']['enabled'], FILTER_VALIDATE_BOOLEAN);
     }
 
     if (isset($newConfig['login']['rental_keypad']) && $newConfig['login']['rental_keypad'] == true) {
