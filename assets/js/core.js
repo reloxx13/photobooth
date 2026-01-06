@@ -1,6 +1,7 @@
 /* eslint n/no-unsupported-features/node-builtins: "off" */
 /* globals initPhotoSwipeFromDOM initRemoteBuzzerFromDOM processChromaImage remoteBuzzerClient rotaryController globalGalleryHandle photoboothTools photoboothPreview virtualKeyboard */
 
+/* global createScreensaver */
 const photoBooth = (function () {
     const PhotoStyle = {
             PHOTO: 'photo',
@@ -64,7 +65,7 @@ const photoBooth = (function () {
             config.preview.asBackground &&
             config.preview.mode === PreviewMode.DEVICE.valueOf() &&
             ((config.commands.preview && !config.preview.bsm) || !config.commands.preview),
-        timeToLive = parseInt(config.picture.time_to_live) * 1000,
+        timeToLive = parseInt(config.picture.time_to_live, 10) * 1000,
         continuousCollageTime = config.collage.continuous_time * 1000,
         retryTimeout = config.picture.retry_timeout * 1000,
         notificationTimeout = config.ui.notification_timeout * 1000,
@@ -91,11 +92,7 @@ const photoBooth = (function () {
         command,
         startTime,
         endTime,
-        totalTime,
-        screensaverTimeout,
-        screensaverSwitchTimeout,
-        screensaverFlip = false,
-        screensaverLastGallerySource = '';
+        totalTime;
 
     const galleryFallbackSource = () => config.screensaver.image_source || '';
 
@@ -166,230 +163,24 @@ const photoBooth = (function () {
         api.screensaver.resetTimer();
     };
 
-    api.screensaver = {
-        resolveSource: function () {
-            const base = environment.publicFolders.api;
-            switch (screensaverMode) {
-                case 'video':
-                    return config.screensaver.video_source;
-                case 'image':
-                    return config.screensaver.image_source;
-                case 'folder':
-                    return base + '/randomImg.php?dir=' + encodeURIComponent('screensavers') + '&t=' + Date.now();
-                case 'gallery':
-                    return base + '/randomImg.php?dir=' + encodeURIComponent('data/images') + '&t=' + Date.now();
-                default:
-                    return '';
-            }
-        },
-        hide: function () {
-            if (!screensaverOverlay.length) {
-                return;
-            }
-            screensaverOverlay.removeClass('screensaver-overlay--active');
-            screensaverOverlay.css('display', 'none');
-            startPage.removeClass('stage--screensaver');
-            clearInterval(screensaverSwitchTimeout);
-
-            if (screensaverVideo.length) {
-                const vid = screensaverVideo.get(0);
-                vid.pause();
-                vid.currentTime = 0;
-                screensaverVideo.attr('src', '');
-            }
-            screensaverImage.hide().attr('src', '');
-            screensaverTextTop.text('').hide();
-            screensaverTextCenter.text('').hide();
-            screensaverTextBottom.text('').hide();
-        },
-        toggleGalleryText: function () {
-            const screensaverText = config.screensaver.text;
-            const eventText = [config.event.textLeft, config.event.textRight].filter(Boolean).join(' ').trim();
-            const showEvent = screensaverMode === 'gallery';
-            const hasScreensaver = !!screensaverText;
-            const hasEvent = showEvent && !!eventText;
-
-            const position = config.screensaver.text_position || 'center';
-            const showTop = position === 'top-center';
-            const showCenter = position === 'center';
-            const showBottom = position === 'bottom-center';
-
-            const resetSlots = () => {
-                screensaverTextTop.removeClass('screensaver-overlay__text--center').hide().text('');
-                screensaverTextCenter.hide().text('');
-                screensaverTextBottom.hide().text('');
-            };
-
-            const setSlot = (text) => {
-                resetSlots();
-                if (showCenter) {
-                    screensaverTextCenter.text(text).show();
-                    return;
-                }
-                if (showTop) {
-                    screensaverTextTop.text(text).show();
-                }
-                if (showBottom) {
-                    screensaverTextBottom.text(text).show();
-                }
-            };
-
-            if (hasScreensaver && hasEvent) {
-                if (screensaverFlip) {
-                    setSlot(screensaverText);
-                    // place event in the opposite available slot
-                    if (showTop && showBottom) {
-                        screensaverTextBottom.text(eventText).show();
-                    } else if (showCenter) {
-                        screensaverTextBottom.text(eventText).show();
-                    } else if (showTop) {
-                        screensaverTextBottom.text(eventText).show();
-                    } else {
-                        screensaverTextTop.text(eventText).show();
-                    }
-                } else {
-                    setSlot(eventText);
-                    if (showTop && showBottom) {
-                        screensaverTextBottom.text(screensaverText).show();
-                    } else if (showCenter) {
-                        screensaverTextBottom.text(screensaverText).show();
-                    } else if (showTop) {
-                        screensaverTextBottom.text(screensaverText).show();
-                    } else {
-                        screensaverTextTop.text(screensaverText).show();
-                    }
-                }
-            } else {
-                const singleText = hasScreensaver ? screensaverText : hasEvent ? eventText : '';
-                if (singleText) {
-                    setSlot(singleText);
-                } else {
-                    resetSlots();
-                }
-            }
-
-            screensaverFlip = !screensaverFlip;
-        },
-        stepScreensaver: function () {
-            const mode = screensaverOverlay.data('mode') || screensaverMode;
-            photoboothTools.console.logDev('Screensaver: step in mode \'' + mode + '\'');
-
-            let nextSource = api.screensaver.resolveSource();
-            if (!nextSource && mode === 'gallery') {
-                nextSource = galleryFallbackSource();
-            }
-
-            // Try to avoid immediate repeat
-            if (mode === 'gallery' || mode === 'folder') {
-                let guard = 5;
-                while (nextSource === screensaverLastGallerySource && guard > 0) {
-                    nextSource = api.screensaver.resolveSource();
-                    guard--;
-                }
-                screensaverLastGallerySource = nextSource;
-            }
-            photoboothTools.console.logDev('Screensaver: next source \'' + nextSource + '\'');
-            if (nextSource) {
-                if (mode === 'folder') {
-                    screensaverOverlay.css('background-image', nextSource ? `url(${urlSafe(nextSource)})` : 'none');
-                } else if (mode === 'gallery') {
-                    screensaverImage
-                        .one('error', function () {
-                            const fallback = galleryFallbackSource();
-                            if (fallback && fallback !== nextSource) {
-                                screensaverLastGallerySource = fallback;
-                                $(this).attr('src', urlSafe(fallback));
-                            }
-                        })
-                        .attr('src', urlSafe(nextSource))
-                        .show();
-                }
-            }
-            if (mode === 'gallery') {
-                api.screensaver.toggleGalleryText();
-            }
-        },
-        show: function () {
-            if (!screensaverEnabled || !screensaverOverlay.length) {
-                return;
-            }
-            const mode = screensaverMode;
-            if (!startPage.hasClass('stage--active')) {
-                api.screensaver.resetTimer();
-                return;
-            }
-
-            if (mode === 'gallery') {
-                screensaverOverlay.addClass('screensaver-overlay--gallery');
-            } else {
-                screensaverOverlay.removeClass('screensaver-overlay--gallery');
-            }
-
-            const source = api.screensaver.resolveSource();
-            let finalSource = source;
-            if (!source) {
-                finalSource = galleryFallbackSource();
-            }
-            if (!finalSource) {
-                api.screensaver.resetTimer();
-                return;
-            }
-            if (mode === 'gallery') {
-                screensaverLastGallerySource = finalSource;
-            }
-
-            if (mode === 'video') {
-                screensaverOverlay.css('background-image', 'none');
-                screensaverVideo.attr('src', urlSafe(finalSource));
-                screensaverVideo.show();
-                const vid = screensaverVideo.get(0);
-                vid.play().catch((err) => {
-                    photoboothTools.console.logDev('Idle video play failed: ' + err);
-                });
-                screensaverImage.hide();
-                api.screensaver.toggleGalleryText();
-            } else if (mode === 'gallery') {
-                screensaverVideo.hide();
-                screensaverOverlay.css('background-image', 'none');
-                screensaverImage
-                    .one('error', function () {
-                        const fallback = galleryFallbackSource();
-                        if (fallback && fallback !== finalSource) {
-                            screensaverLastGallerySource = fallback;
-                            $(this).attr('src', urlSafe(fallback));
-                        }
-                    })
-                    .attr('src', urlSafe(finalSource))
-                    .show();
-                api.screensaver.toggleGalleryText();
-            } else {
-                screensaverVideo.hide();
-                screensaverImage.hide();
-                api.screensaver.toggleGalleryText();
-                screensaverOverlay.css('background-image', finalSource ? `url(${urlSafe(finalSource)})` : 'none');
-                screensaverOverlay.css('background-size', 'cover');
-            }
-
-            startPage.addClass('stage--screensaver');
-            screensaverOverlay.addClass('screensaver-overlay--active');
-            screensaverOverlay.css('display', 'flex');
-
-            clearInterval(screensaverSwitchTimeout);
-            if ((mode === 'folder' || mode === 'gallery') && screensaverSwitchMs > 0) {
-                screensaverSwitchTimeout = setInterval(function nextIdleFrame() {
-                    api.screensaver.stepScreensaver();
-                }, screensaverSwitchMs);
-            }
-        },
-        resetTimer: function () {
-            if (!screensaverEnabled) {
-                return;
-            }
-            clearTimeout(screensaverTimeout);
-            api.screensaver.hide();
-            screensaverTimeout = setTimeout(api.screensaver.show, screensaverTimeoutMs);
-        }
-    };
+    api.screensaver = createScreensaver({
+        config,
+        environment,
+        startPage,
+        overlay: screensaverOverlay,
+        videoEl: screensaverVideo,
+        imageEl: screensaverImage,
+        textTop: screensaverTextTop,
+        textCenter: screensaverTextCenter,
+        textBottom: screensaverTextBottom,
+        screensaverEnabled,
+        screensaverMode,
+        screensaverTimeoutMs,
+        screensaverSwitchMs,
+        urlSafe,
+        galleryFallbackSource,
+        photoboothTools
+    });
 
     api.navbar = {
         open: function () {
