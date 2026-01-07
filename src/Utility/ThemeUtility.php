@@ -35,9 +35,24 @@ class ThemeUtility
 
         $fontCss = '';
 
+        $loadedFontUrls = [];
+
+        $appendFontFace = static function (string $family, string $path) use (&$fontCss, &$loadedFontUrls): string {
+            $url = PathUtility::getPublicPath($path);
+
+            // Avoid emitting duplicate @font-face rules when the same font file is used in multiple slots.
+            if (!isset($loadedFontUrls[$url])) {
+                $loadedFontUrls[$url] = $family;
+                $fontCss              .= "@font-face {font-family:'{$family}';src:url('{$url}') format('truetype');font-display:swap;}\n";
+            }
+
+            return $loadedFontUrls[$url];
+        };
+
         // Default font
         if (!empty($config['fonts']['default'])) {
-            $fontCss .= "@font-face {font-family:'DefaultFont';src:url('" . PathUtility::getPublicPath($config['fonts']['default']) . "') format('truetype');font-display:swap;}\n";
+            $fontFamily                          = $appendFontFace('DefaultFont', $config['fonts']['default']);
+            $properties['--font-family-default'] = $fontFamily;
         }
         if (!empty($config['fonts']['default_color'])) {
             $properties['--font-color'] = $config['fonts']['default_color'];
@@ -47,7 +62,8 @@ class ThemeUtility
 
         // Start screen font
         if (!empty($config['fonts']['start_screen_title'])) {
-            $fontCss .= "@font-face {font-family:'StartScreenFont';src:url('" . PathUtility::getPublicPath($config['fonts']['start_screen_title']) . "') format('truetype');font-display:swap;}\n";
+            $fontFamily                             = $appendFontFace('StartScreenFont', $config['fonts']['start_screen_title']);
+            $properties['--font-family-start-text'] = $fontFamily;
         }
         $properties['--start-text-color']  = $config['fonts']['start_screen_title_color'] ?? '__UNSET__';
         $properties['--start-text-weight'] = !empty($config['fonts']['start_screen_title_bold']) ? '700' : '400';
@@ -55,7 +71,8 @@ class ThemeUtility
 
         // Event font
         if (!empty($config['fonts']['event_text'])) {
-            $fontCss .= "@font-face {font-family:'EventFont';src:url('" . PathUtility::getPublicPath($config['fonts']['event_text']) . "') format('truetype');font-display:swap;}\n";
+            $fontFamily                             = $appendFontFace('EventFont', $config['fonts']['event_text']);
+            $properties['--font-family-event-text'] = $fontFamily;
         }
         $properties['--event-text-color']  = $config['fonts']['event_text_color'] ?? '__UNSET__';
         $properties['--event-text-weight'] = !empty($config['fonts']['event_text_bold']) ? '700' : '400';
@@ -63,7 +80,8 @@ class ThemeUtility
 
         // Gallery title font
         if (!empty($config['fonts']['gallery_title'])) {
-            $fontCss .= "@font-face {font-family:'GalleryFont';src:url('" . PathUtility::getPublicPath($config['fonts']['gallery_title']) . "') format('truetype');font-display:swap;}\n";
+            $fontFamily                                = $appendFontFace('GalleryFont', $config['fonts']['gallery_title']);
+            $properties['--font-family-gallery-title'] = $fontFamily;
         }
         $properties['--gallery-title-color']  = $config['fonts']['gallery_title_color'] ?? '__UNSET__';
         $properties['--gallery-title-weight'] = !empty($config['fonts']['gallery_title_bold']) ? '700' : '400';
@@ -71,19 +89,17 @@ class ThemeUtility
 
         // Screensaver font
         if (!empty($config['fonts']['screensaver_text'])) {
-            $fontCss .= "@font-face {font-family:'ScreensaverFont';src:url('" . PathUtility::getPublicPath($config['fonts']['screensaver_text']) . "') format('truetype');font-display:swap;}\n";
-        } elseif (!empty($config['screensaver']['text_font'])) {
-            // fallback to legacy location
-            $fontCss .= "@font-face {font-family:'ScreensaverFont';src:url('" . PathUtility::getPublicPath($config['screensaver']['text_font']) . "') format('truetype');font-display:swap;}\n";
+            $fontFamily                                   = $appendFontFace('ScreensaverFont', $config['fonts']['screensaver_text']);
+            $properties['--font-family-screensaver-text'] = $fontFamily;
         }
-        $properties['--screensaver-text-color']  = $config['fonts']['screensaver_text_color']
-                                                   ?? ($config['screensaver']['text_color'] ?? '#ffffff');
+        $properties['--screensaver-text-color'] = $config['fonts']['screensaver_text_color'] ?? '__UNSET__';
         $properties['--screensaver-text-weight'] = !empty($config['fonts']['screensaver_text_bold']) ? '700' : '400';
         $properties['--screensaver-text-style']  = !empty($config['fonts']['screensaver_text_italic']) ? 'italic' : 'normal';
 
         // Font variables (button)
         if (!empty($config['fonts']['button_font'])) {
-            $fontCss .= "@font-face {font-family:'ButtonFont';src:url('" . PathUtility::getPublicPath($config['fonts']['button_font']) . "') format('truetype');font-display:swap;}\n";
+            $fontFamily                         = $appendFontFace('ButtonFont', $config['fonts']['button_font']);
+            $properties['--font-family-button'] = $fontFamily;
         }
         $properties['--button-font-color']  = $config['fonts']['button_font_color'] ?? '__UNSET__';
         $properties['--button-font-weight'] = !empty($config['fonts']['button_font_bold']) ? '700' : '400';
@@ -91,7 +107,8 @@ class ThemeUtility
 
         // Font variables (buzzer message)
         if (!empty($config['fonts']['button_buzzer_message_font'])) {
-            $fontCss .= "@font-face {font-family:'BuzzerMessageFont';src:url('" . PathUtility::getPublicPath($config['fonts']['button_buzzer_message_font']) . "') format('truetype');font-display:swap;}\n";
+            $fontFamily                                        = $appendFontFace('BuzzerMessageFont', $config['fonts']['button_buzzer_message_font']);
+            $properties['--font-family-button_buzzer_message'] = $fontFamily;
         }
         $properties['--buzzer-message-font-color']  = $config['fonts']['button_buzzer_message_font_color'] ?? '__UNSET__';
         $properties['--buzzer-message-font-weight'] = !empty($config['fonts']['button_buzzer_message_font_bold']) ? '700' : '400';

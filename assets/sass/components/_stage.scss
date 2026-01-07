@@ -187,14 +187,14 @@
 }
 
 .stage--start .names .start-text {
-  font-family: 'StartScreenFont', 'DefaultFont', 'Dosis', sans-serif;
+  font-family: var(--font-family-start-text, --font-family-default), 'Dosis', sans-serif;
   color: var(--start-text-color, inherit);
   font-weight: var(--start-text-weight, 400);
   font-style: var(--start-text-style, normal);
 }
 
 .stage--start .names .event-text {
-  font-family: 'EventFont', 'DefaultFont', 'Dosis', sans-serif;
+  font-family: var(--font-family-event-text, --font-family-default), 'Dosis', sans-serif;
   color: var(--event-text-color, inherit);
   font-weight: var(--event-text-weight, 400);
   font-style: var(--event-text-style, normal);
