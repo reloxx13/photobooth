@@ -14,7 +14,7 @@ $assetService = AssetService::getInstance();
     <meta name="msapplication-TileColor" content="<?=$config['colors']['primary']?>">
     <meta name="theme-color" content="<?=$config['colors']['status_bar'] ?? '#000000'?>">
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
     <title><?=$pageTitle ?></title>
 
