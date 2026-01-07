@@ -35,7 +35,7 @@
   gap: var(--button-gap);
   font-size: var(--button-font-size);
   font-weight: var(--button-font-weight);
-  font-family: 'ButtonFont', 'DefaultFont', 'Dosis', sans-serif;
+  font-family: var(--font-family-button, --font-family-default), 'Dosis', sans-serif;
   font-style: var(--button-font-style, normal);
   color: var(--button-color);
   text-align: center;
