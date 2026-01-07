@@ -92,7 +92,15 @@
             const g = parseInt(fullHex.substring(2, 4), 16) || 0;
             const b = parseInt(fullHex.substring(4, 6), 16) || 0;
             const screensaverBackdrop = `rgba(${r}, ${g}, ${b}, ${safeAlpha})`;
-            const eventText = [config.event.textLeft, config.event.textRight].filter(Boolean).join(' ').trim();
+            const buildEventText = () => {
+                const left = config.event.textLeft || '';
+                const right = config.event.textRight || '';
+                const symbolClass = config.event.symbol || '';
+                const symbol = symbolClass ? `<i class="fa ${symbolClass}" aria-hidden="true"></i>` : '';
+                return [left, symbol, right].filter(Boolean).join(' ').trim();
+            };
+
+            const eventText = buildEventText();
             const showEvent = screensaverMode === 'gallery';
             const hasScreensaver = !!screensaverText;
             const hasEvent = showEvent && !!eventText;
@@ -108,20 +116,31 @@
                 textBottom.hide().text('');
             };
 
-            const setSlot = (text) => {
+            const applyContent = ($el, content, isHtml = false) => {
+                if (isHtml) {
+                    $el.html(content);
+                } else {
+                    $el.text(content);
+                }
+            };
+
+            const setSlot = (content, isHtml = false) => {
                 resetSlots();
                 [textTop, textCenter, textBottom].forEach(($el) => {
                     $el.css('background', screensaverBackdrop);
                 });
                 if (showCenter) {
-                    textCenter.text(text).show();
+                    applyContent(textCenter, content, isHtml);
+                    textCenter.show();
                     return;
                 }
                 if (showTop) {
-                    textTop.text(text).show();
+                    applyContent(textTop, content, isHtml);
+                    textTop.show();
                 }
                 if (showBottom) {
-                    textBottom.text(text).show();
+                    applyContent(textBottom, content, isHtml);
+                    textBottom.show();
                 }
             };
 
@@ -129,26 +148,32 @@
                 if (screensaverFlip) {
                     setSlot(screensaverText);
                     if (showTop && showBottom) {
-                        textBottom.text(eventText).show();
+                        applyContent(textBottom, eventText, true);
+                        textBottom.show();
                     } else if (showCenter || showTop) {
-                        textBottom.text(eventText).show();
+                        applyContent(textBottom, eventText, true);
+                        textBottom.show();
                     } else {
-                        textTop.text(eventText).show();
+                        applyContent(textTop, eventText, true);
+                        textTop.show();
                     }
                 } else {
-                    setSlot(eventText);
+                    setSlot(eventText, true);
                     if (showTop && showBottom) {
-                        textBottom.text(screensaverText).show();
+                        applyContent(textBottom, screensaverText);
+                        textBottom.show();
                     } else if (showCenter || showTop) {
-                        textBottom.text(screensaverText).show();
+                        applyContent(textBottom, screensaverText);
+                        textBottom.show();
                     } else {
-                        textTop.text(screensaverText).show();
+                        applyContent(textTop, screensaverText);
+                        textTop.show();
                     }
                 }
             } else {
                 const singleText = hasScreensaver ? screensaverText : hasEvent ? eventText : '';
                 if (singleText) {
-                    setSlot(singleText);
+                    setSlot(singleText, hasEvent);
                 } else {
                     resetSlots();
                 }
