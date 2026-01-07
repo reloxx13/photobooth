@@ -12,7 +12,6 @@ final class ColorsConfiguration
         return (new TreeBuilder('colors'))->getRootNode()->addDefaultsIfNotSet()
             ->ignoreExtraKeys()
             ->children()
-                ->scalarNode('countdown')->defaultValue('#1b3faa')->end()
                 ->scalarNode('background_countdown')->defaultValue('#8d9fd4')->end()
                 ->scalarNode('cheese')->defaultValue('#aa1b3f')->end()
                 ->scalarNode('primary')->defaultValue('#1b3faa')->end()
