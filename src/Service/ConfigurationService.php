@@ -222,6 +222,11 @@ class ConfigurationService
             $config['fonts']['button_font_color'] = $config['colors']['button_font'];
         }
 
+        // Migrate countdown color from colors to fonts section
+        if (!empty($config['colors']['countdown']) && empty($config['fonts']['countdown_text_color'])) {
+            $config['fonts']['countdown_text_color'] = $config['colors']['countdown'];
+        }
+
         // Migrate start font color to new font slots if empty
         if (!empty($config['colors']['start_font'])) {
             if (empty($config['fonts']['start_screen_title_color'])) {

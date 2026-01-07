@@ -19,7 +19,6 @@ class ThemeUtility
             '--secondary-color' => $config['colors']['secondary'] ?? '__UNSET__',
             '--highlight-color' => $config['colors']['highlight'] ?? '__UNSET__',
             '--secondary-font-color' => $config['colors']['font_secondary'] ?? '__UNSET__',
-            '--countdown-color' => $config['colors']['countdown'] ?? '__UNSET__',
             '--background-countdown-color' => $config['colors']['background_countdown'] ?? '__UNSET__',
             '--cheese-color' => $config['colors']['cheese'] ?? '__UNSET__',
             '--panel-color' => $config['colors']['panel'] ?? '__UNSET__',
@@ -77,6 +76,15 @@ class ThemeUtility
         $properties['--event-text-color']  = $config['fonts']['event_text_color'] ?? '__UNSET__';
         $properties['--event-text-weight'] = !empty($config['fonts']['event_text_bold']) ? '700' : '400';
         $properties['--event-text-style']  = !empty($config['fonts']['event_text_italic']) ? 'italic' : 'normal';
+
+        // Countdown font
+        if (!empty($config['fonts']['countdown_text'])) {
+            $fontFamily                            = $appendFontFace('CountdownFont', $config['fonts']['countdown_text']);
+            $properties['--font-family-countdown'] = $fontFamily;
+        }
+        $properties['--countdown-font-weight'] = !empty($config['fonts']['countdown_text_bold']) ? '700' : '400';
+        $properties['--countdown-font-style']  = !empty($config['fonts']['countdown_text_italic']) ? 'italic' : 'normal';
+        $properties['--countdown-font-color']  = $config['fonts']['countdown_text_color'] ?? '__UNSET__';
 
         // Gallery title font
         if (!empty($config['fonts']['gallery_title'])) {
