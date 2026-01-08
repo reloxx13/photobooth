@@ -1346,7 +1346,8 @@ const photoBooth = (function () {
             url: environment.publicFolders.api + '/deletePhoto.php',
             method: 'POST',
             data: {
-                file: imageName
+                file: imageName,
+                [csrf.key]: csrf.token
             },
             success: (data) => {
                 if (data.success) {
@@ -1486,7 +1487,8 @@ const photoBooth = (function () {
             method: 'GET',
             url: environment.publicFolders.api + '/printDB.php',
             data: {
-                action: 'unlockPrint'
+                action: 'unlockPrint',
+                [csrf.key]: csrf.token
             },
             success: (data) => {
                 if (data.success) {

@@ -150,6 +150,7 @@ $(function () {
 
         $.ajax({
             url: '../api/rebuildImageDB.php',
+            data: { [csrf.key]: csrf.token },
             // eslint-disable-next-line no-unused-vars
             success: function (resp) {
                 $('.pageLoader').removeClass('isActive');
@@ -175,6 +176,7 @@ $(function () {
         $.ajax({
             url: '../api/checkVersion.php',
             method: 'GET',
+            data: { [csrf.key]: csrf.token },
             success: (data) => {
                 $('#checkVersion').empty();
                 photoboothTools.console.log('data', data);
@@ -226,7 +228,8 @@ $(function () {
             method: 'GET',
             url: '../api/printDB.php',
             data: {
-                action: 'unlockPrint'
+                action: 'unlockPrint',
+                [csrf.key]: csrf.token
             },
             success: (data) => {
                 $('.pageLoader').removeClass('isActive');
