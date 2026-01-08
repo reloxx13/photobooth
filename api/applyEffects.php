@@ -257,10 +257,11 @@ try {
                 $scale        = $currentWidth / $originalWidth;
             }
 
-            $imageHandler->fontSize        = (int)$config['textonpicture']['font_size'] * $scale;
-            $imageHandler->textLineSpacing = (int)$config['textonpicture']['linespace'] * $scale;
-            $imageHandler->fontLocationX   = (int)$config['textonpicture']['locationx'] * $scale;
-            $imageHandler->fontLocationY   = (int)$config['textonpicture']['locationy'] * $scale;
+            // Cast after scaling to avoid implicit float-to-int deprecation warnings in PHP 8.4
+            $imageHandler->fontSize        = (int) round($config['textonpicture']['font_size'] * $scale);
+            $imageHandler->textLineSpacing = (int) round($config['textonpicture']['linespace'] * $scale);
+            $imageHandler->fontLocationX   = (int) round($config['textonpicture']['locationx'] * $scale);
+            $imageHandler->fontLocationY   = (int) round($config['textonpicture']['locationy'] * $scale);
             $imageHandler->fontRotation = $config['textonpicture']['rotation'];
             $imageHandler->fontColor = $config['textonpicture']['font_color'];
             $imageHandler->fontPath = $config['textonpicture']['font'];
