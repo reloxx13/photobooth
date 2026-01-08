@@ -140,37 +140,37 @@ try {
 
             if (!$vars['isCollage'] || $vars['editSingleCollage']) {
                 $filterProcessSize = intval($config['filters']['process_size'] ?? 0);
-                $downscaledForFilter = false;
+
+                // only downscale if filter not plain, rembg is enabled
+                if ($vars['imageFilter'] === ImageFilterEnum::PLAIN && !$config['rembg']['enabled']) {
+                    $originalWidth    = imagesx($imageResource);
+                    $originalHeight   = imagesy($imageResource);
+                    $originalResource = $imageResource;
+
+                    if ($filterProcessSize > 0 && ($originalWidth > $filterProcessSize || $originalHeight > $filterProcessSize)) {
+                        $downscaledResource = $imageHandler->resizeImage($imageResource, $filterProcessSize);
+                        if ($downscaledResource instanceof \GdImage) {
+                            $imageResource = $downscaledResource;
+                        }
+                    }
+                }
 
                 // apply filter (optionally downscale first for performance)
                 if ($vars['imageFilter'] !== null && $vars['imageFilter'] !== ImageFilterEnum::PLAIN) {
-                    $originalWidth = imagesx($imageResource);
-                    $originalHeight = imagesy($imageResource);
-                    $filterResource = $imageResource;
-
-                    if ($filterProcessSize > 0 && ($originalWidth > $filterProcessSize || $originalHeight > $filterProcessSize)) {
-                        $downscaled = $imageHandler->resizeImage($imageResource, $filterProcessSize);
-                        if ($downscaled instanceof \GdImage) {
-                            $filterResource = $downscaled;
-                            $downscaledForFilter = true;
-                        }
-                    }
-
                     try {
-                        ImageUtility::applyFilter($vars['imageFilter'], $filterResource);
+                        ImageUtility::applyFilter($vars['imageFilter'], $imageResource);
                         $imageHandler->imageModified = true;
                     } catch (\Exception $e) {
                         throw new \Exception('Error applying image filter.');
                     }
 
-                    if ($filterResource !== $imageResource) {
-                        $imageResource = $filterResource;
+                    if ($originalResource !== $imageResource) {
                         // Maybe we want this later or configurable, will take some time to process upscale again
                         // Upscale back to original size
-                        //                        $restored = $imageHandler->resizeImage($filterResource, $originalWidth, $originalHeight);
+                        //                        $restored = $imageHandler->resizeImage($imageResource, $originalWidth, $originalHeight);
                         //                        if ($restored instanceof \GdImage) {
-                        //                            if ($filterResource instanceof \GdImage) {
-                        //                                unset($filterResource);
+                        //                            if ($imageResource instanceof \GdImage) {
+                        //                                unset($imageResource);
                         //                            }
                         //                            $imageResource = $restored;
                         //                        }
@@ -202,20 +202,10 @@ try {
                     }
                 }
 
-                // Apply rembg (downscale first if filters_process_size is set and not already downscaled for filters)
-                if ($filterProcessSize > 0 && !$downscaledForFilter) {
-                    $width = imagesx($imageResource);
-                    $height = imagesy($imageResource);
-                    if ($width > $filterProcessSize || $height > $filterProcessSize) {
-                        $downscaled = $imageHandler->resizeImage($imageResource, $filterProcessSize);
-                        if ($downscaled instanceof \GdImage) {
-                            $imageResource = $downscaled;
-                        }
-                    }
-                }
 
                 // Apply rembg
                 [$imageHandler, $imageResource] = Rembg::process($imageHandler, $vars, $config['rembg'], $imageResource);
+
                 if ($config['picture']['polaroid_effect']) {
                     $imageHandler->polaroidRotation = $config['picture']['polaroid_rotation'];
                     $imageResource = $imageHandler->effectPolaroid($imageResource);
@@ -265,16 +255,23 @@ try {
         }
 
         if ($config['textonpicture']['enabled'] && (!$vars['isCollage'] && !$vars['isChroma'] || $vars['editSingleCollage'])) {
-            $imageHandler->fontSize = $config['textonpicture']['font_size'];
+            // calculate and apply text on picture if image got downscaled before
+            $scale = 1.0;
+            if (isset($originalWidth) && isset($originalHeight)) {
+                $currentWidth = imagesx($imageResource);
+                $scale        = $currentWidth / $originalWidth;
+            }
+
+            $imageHandler->fontSize        = (int)$config['textonpicture']['font_size'] * $scale;
+            $imageHandler->textLineSpacing = (int)$config['textonpicture']['linespace'] * $scale;
+            $imageHandler->fontLocationX   = (int)$config['textonpicture']['locationx'] * $scale;
+            $imageHandler->fontLocationY   = (int)$config['textonpicture']['locationy'] * $scale;
             $imageHandler->fontRotation = $config['textonpicture']['rotation'];
-            $imageHandler->fontLocationX = $config['textonpicture']['locationx'];
-            $imageHandler->fontLocationY = $config['textonpicture']['locationy'];
             $imageHandler->fontColor = $config['textonpicture']['font_color'];
             $imageHandler->fontPath = $config['textonpicture']['font'];
             $imageHandler->textLine1 = $config['textonpicture']['line1'];
             $imageHandler->textLine2 = $config['textonpicture']['line2'];
             $imageHandler->textLine3 = $config['textonpicture']['line3'];
-            $imageHandler->textLineSpacing = $config['textonpicture']['linespace'];
             $imageResource = $imageHandler->applyText($imageResource);
             if (!$imageResource instanceof \GdImage) {
                 throw new \Exception('Error applying text to image resource.');
