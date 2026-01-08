@@ -2,6 +2,7 @@
 
 namespace Photobooth\Utility;
 
+use Exception;
 use GdImage;
 use Photobooth\Enum\ImageFilterEnum;
 
@@ -40,24 +41,14 @@ class ImageUtility
         'resources/img/demo'
     ];
 
+    /**
+     * @throws Exception
+     */
     public static function getImagesFromPath(string $path, bool $processing = true): array
     {
-        if (!PathUtility::isAbsolutePath($path)) {
-            $path = PathUtility::getAbsolutePath($path);
-        }
-        if (!PathUtility::isAbsolutePath($path)) {
-            throw new \Exception('Path ' . $path . ' does not exist.');
-        }
+        $allowedExtensions = $processing ? self::supportedFileExtensionsProcessing : self::supportedFileExtensionsSelect;
 
-        $files = [];
-        foreach (new \DirectoryIterator($path) as $file) {
-            if (!$file->isFile() || !in_array(strtolower($file->getExtension()), $processing ? self::supportedFileExtensionsProcessing : self::supportedFileExtensionsSelect)) {
-                continue;
-            }
-            $files[] = $path . '/' . $file->getFilename();
-        }
-
-        return $files;
+        return FileUtility::getFilesFromPath($path, $allowedExtensions);
     }
 
     public static function getRandomImageFromPath(string $path): string
@@ -72,7 +63,7 @@ class ImageUtility
 
         $files = self::getImagesFromPath($path);
         if (count($files) === 0) {
-            throw new \Exception('Path ' . $path . ' does not contain images.');
+            throw new Exception('Path ' . $path . ' does not contain images.');
         }
 
         return $files[array_rand($files)];
@@ -96,7 +87,7 @@ class ImageUtility
         }
 
         if (empty($demoImages)) {
-            throw new \Exception('No images found in any of the demo folders.');
+            throw new Exception('No images found in any of the demo folders.');
         }
 
         if ($filecount > 0) {
