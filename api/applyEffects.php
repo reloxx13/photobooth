@@ -137,6 +137,7 @@ try {
                 $filterProcessSize = intval($config['filters']['process_size'] ?? 0);
 
                 // only downscale if filter not plain, rembg is enabled
+                $originalResource = null;
                 if ($vars['imageFilter'] !== ImageFilterEnum::PLAIN || $config['rembg']['enabled']) {
                     $originalWidth    = imagesx($imageResource);
                     $originalHeight   = imagesy($imageResource);
@@ -159,17 +160,6 @@ try {
                         throw new \Exception('Error applying image filter.');
                     }
 
-                    if ($originalResource !== $imageResource) {
-                        // Maybe we want this later or configurable, will take some time to process upscale again
-                        // Upscale back to original size
-                        //                        $restored = $imageHandler->resizeImage($imageResource, $originalWidth, $originalHeight);
-                        //                        if ($restored instanceof \GdImage) {
-                        //                            if ($imageResource instanceof \GdImage) {
-                        //                                unset($imageResource);
-                        //                            }
-                        //                            $imageResource = $restored;
-                        //                        }
-                    }
                 }
 
                 if ($config['picture']['flip'] !== 'off') {
@@ -196,7 +186,6 @@ try {
                         throw new \Exception('Error resizing resource.');
                     }
                 }
-
 
                 // Apply rembg
                 [$imageHandler, $imageResource] = Rembg::process($imageHandler, $vars, $config['rembg'], $imageResource);
@@ -226,6 +215,18 @@ try {
                         throw new \Exception('Error applying frame to image resource.');
                     }
                 }
+
+//                if (!empty($originalResource) && $originalResource !== $imageResource) {
+                // Maybe we want this later or configurable, will take some time to process upscale again
+                // Upscale back to original size
+                //                        $restored = $imageHandler->resizeImage($imageResource, $originalWidth, $originalHeight);
+                //                        if ($restored instanceof \GdImage) {
+                //                            if ($imageResource instanceof \GdImage) {
+                //                                unset($imageResource);
+                //                            }
+                //                            $imageResource = $restored;
+                //                        }
+//                }
             }
         }
 
