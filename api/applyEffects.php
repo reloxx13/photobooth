@@ -142,7 +142,7 @@ try {
                 $filterProcessSize = intval($config['filters']['process_size'] ?? 0);
 
                 // only downscale if filter not plain, rembg is enabled
-                if ($vars['imageFilter'] === ImageFilterEnum::PLAIN && !$config['rembg']['enabled']) {
+                if ($vars['imageFilter'] === ImageFilterEnum::PLAIN || $config['rembg']['enabled']) {
                     $originalWidth    = imagesx($imageResource);
                     $originalHeight   = imagesy($imageResource);
                     $originalResource = $imageResource;
