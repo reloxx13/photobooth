@@ -169,6 +169,20 @@ if ($action === 'reset') {
     if (($newConfig['login']['rental_pin'] ?? '') === '' && $existingRentalPin !== null) {
         $newConfig['login']['rental_pin'] = $existingRentalPin;
     }
+    if (
+        array_key_exists('password', $newConfig['login'])
+        && $newConfig['login']['password'] === ''
+        && isset($config['login']['password'])
+        && $config['login']['password'] !== null
+    ) {
+        $newConfig['login']['password'] = $config['login']['password'];
+    } elseif (
+        isset($newConfig['login']['password'])
+        && $newConfig['login']['password'] !== ''
+        && $newConfig['login']['password'] != ($config['login']['password'] ?? null)
+    ) {
+        $newConfig['login']['password'] = password_hash($newConfig['login']['password'], PASSWORD_DEFAULT);
+    }
 
     if (isset($newConfig['login']['enabled']) && $newConfig['login']['enabled'] == true) {
         $loginPinIsHashed = AdminKeypad::isHashedPin($newConfig['login']['pin'] ?? null);
@@ -180,31 +194,16 @@ if ($action === 'reset') {
                 $newConfig['login']['keypad'] = false;
                 $newConfig['login']['pin'] = '';
             }
-            // Handle password: if left empty, keep existing hash; if new value provided, hash it
-            if (
-                array_key_exists('password', $newConfig['login'])
-                && $newConfig['login']['password'] === ''
-                && isset($config['login']['password'])
-                && $config['login']['password'] !== null
-            ) {
-                $newConfig['login']['password'] = $config['login']['password'];
-            } elseif (isset($newConfig['login']['password']) && $newConfig['login']['password'] !== '') {
+            if (isset($newConfig['login']['password']) && $newConfig['login']['password'] !== '') {
                 $newConfig['login']['enabled'] = true;
-                if ($newConfig['login']['password'] != $config['login']['password']) {
-                    $hashing = password_hash($newConfig['login']['password'], PASSWORD_DEFAULT);
-                    $newConfig['login']['password'] = $hashing;
-                }
             }
         } else {
             $newConfig['login']['enabled'] = false;
             $newConfig['login']['keypad'] = false;
-            $newConfig['login']['pin'] = '';
             $logger->debug('Password not set. Login disabled.', $newConfig['login']);
         }
     } else {
-        $newConfig['login']['password'] = null;
         $newConfig['login']['keypad'] = false;
-        $newConfig['login']['pin'] = '';
     }
 
     if (isset($newConfig['login']['rental_keypad']) && $newConfig['login']['rental_keypad'] == true) {
@@ -218,8 +217,6 @@ if ($action === 'reset') {
             $newConfig['login']['rental_keypad'] = false;
             $newConfig['login']['rental_pin'] = '';
         }
-    } else {
-        $newConfig['login']['rental_pin'] = '';
     }
 
     if (isset($newConfig['filters']['enabled']) && $newConfig['filters']['enabled'] == true) {
@@ -314,6 +311,14 @@ if ($action === 'reset') {
     if ($newConfig['textonprint']['enabled'] && $newConfig['textonprint']['font'] === '') {
         $newConfig['textonprint']['enabled'] = false;
         $logger->debug('Print font is empty. Disabled text on print.');
+    }
+
+    // Hash password if a plain value slipped through (e.g., kept existing value while login disabled)
+    if (!empty($newConfig['login']['password'])) {
+        $passwordInfo = password_get_info($newConfig['login']['password']);
+        if (($passwordInfo['algo'] ?? 0) === 0) {
+            $newConfig['login']['password'] = password_hash($newConfig['login']['password'], PASSWORD_DEFAULT);
+        }
     }
 
     // Hash PINs just before save to ensure storage never keeps plain values
