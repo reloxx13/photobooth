@@ -2722,7 +2722,7 @@ return [
             'type' => 'input',
             'placeholder' => null,
             'name' => 'login[password]',
-            'value' => htmlentities($config['login']['password'] ?? ''),
+            'value' => '',
         ],
         'login_keypad' => [
             'view' => 'basic',
@@ -2732,10 +2732,14 @@ return [
         ],
         'login_pin' => [
             'view' => 'basic',
-            'type' => 'number',
+            'type'       => 'input',
             'placeholder' => '5555',
             'name' => 'login[pin]',
-            'value' => $config['login']['pin'],
+            'value'      => '',
+            'attributes' => [
+                'inputmode' => 'numeric',
+                'pattern'   => '[0-9]*',
+            ],
         ],
         'login_rental_keypad' => [
             'view' => 'basic',
@@ -2745,10 +2749,14 @@ return [
         ],
         'login_rental_pin' => [
             'view' => 'basic',
-            'type' => 'number',
+            'type'       => 'input',
             'placeholder' => '0815',
             'name' => 'login[rental_pin]',
-            'value' => $config['login']['rental_pin'],
+            'value'      => '',
+            'attributes' => [
+                'inputmode' => 'numeric',
+                'pattern'   => '[0-9]*',
+            ],
         ],
         'protect_admin' => [
             'view' => 'advanced',
