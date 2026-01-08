@@ -2241,6 +2241,13 @@ return [
             'name' => 'qr[append_filename]',
             'value' => $config['qr']['append_filename'],
         ],
+        'qr_short_text' => [
+            'view' => 'advanced',
+            'type' => 'input',
+            'placeholder' => $defaultConfig['qr']['short_text'],
+            'name' => 'qr[short_text]',
+            'value' => htmlentities($config['qr']['short_text'] ?? ''),
+        ],
         'qr_custom_text' => [
             'view' => 'advanced',
             'type' => 'checkbox',
