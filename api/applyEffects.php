@@ -216,9 +216,9 @@ try {
                     }
                 }
 
-//                if (!empty($originalResource) && $originalResource !== $imageResource) {
                 // Maybe we want this later or configurable, will take some time to process upscale again
                 // Upscale back to original size
+                //                if (!empty($originalResource) && $originalResource !== $imageResource) {
                 //                        $restored = $imageHandler->resizeImage($imageResource, $originalWidth, $originalHeight);
                 //                        if ($restored instanceof \GdImage) {
                 //                            if ($imageResource instanceof \GdImage) {
@@ -226,7 +226,7 @@ try {
                 //                            }
                 //                            $imageResource = $restored;
                 //                        }
-//                }
+                //                }
             }
         }
 
