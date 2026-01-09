@@ -201,6 +201,7 @@ function initPhotoSwipeFromDOM(gallerySelector) {
                                 qrImage.classList.add('pswp-qrcode__image');
                                 qrWrapper.append(qrImage);
 
+                                const qrShortText = config.qr.short_text;
                                 if (qrShortText && qrShortText.length > 0) {
                                     qrCaption = document.createElement('p');
                                     qrCaption.classList.add('pswp-qrcode__caption');
