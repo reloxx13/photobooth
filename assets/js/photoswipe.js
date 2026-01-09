@@ -193,9 +193,7 @@ function initPhotoSwipeFromDOM(gallerySelector) {
                                 const qrShortText = config.qr.short_text;
 
                                 qrImage.addEventListener('load', () => {
-                                    if (qrCaption) {
-                                        qrWrapper.append(qrCaption);
-                                    }
+                                    $('.pswp').append(qrWrapper);
                                 });
 
                                 qrImage.src =
@@ -212,7 +210,6 @@ function initPhotoSwipeFromDOM(gallerySelector) {
                                     qrCaption.textContent = qrShortText;
                                 }
 
-                                $('.pswp').append(qrWrapper);
                             });
                         }
                     },

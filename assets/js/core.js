@@ -1284,9 +1284,7 @@ const photoBooth = (function () {
                 const qrShortText = config.qr.short_text;
 
                 qrResultImage.addEventListener('load', () => {
-                    if (qrCaption) {
-                        qrWrapper.append(qrCaption);
-                    }
+                    resultPage.append(qrWrapper);
                 });
 
                 qrResultImage.src = environment.publicFolders.api + '/qrcode.php?filename=' + filename;
@@ -1299,7 +1297,6 @@ const photoBooth = (function () {
                     qrCaption.classList.add('stage-code__caption');
                     qrCaption.textContent = qrShortText;
                 }
-                resultPage.append(qrWrapper);
             }
 
             if (!filternav.hasClass('sidenav--open')) {
