@@ -188,19 +188,16 @@ function initPhotoSwipeFromDOM(gallerySelector) {
                                 const qrWrapper = document.createElement('div');
                                 qrWrapper.id = 'pswpQR';
                                 qrWrapper.setAttribute('class', 'pswp-qrcode ' + config.qr.pswp);
-                                const qrImage = document.createElement('img');
-                                let qrCaption = null;
-                                const qrShortText = config.qr.short_text;
 
+                                const qrImage = document.createElement('img');
                                 qrImage.addEventListener('load', () => {
                                     $('.pswp').append(qrWrapper);
                                 });
-
                                 qrImage.src =
                                     environment.publicFolders.api +
                                     '/qrcode.php?filename=' +
                                     pswp.currSlide.data.src.split('\\').pop().split('/').pop();
-                                qrImage.alt = 'qr code';
+                                qrImage.alt = 'QR-Code';
                                 qrImage.classList.add('pswp-qrcode__image');
                                 qrWrapper.append(qrImage);
 
@@ -209,7 +206,6 @@ function initPhotoSwipeFromDOM(gallerySelector) {
                                     qrCaption.classList.add('pswp-qrcode__caption');
                                     qrCaption.textContent = qrShortText;
                                 }
-
                             });
                         }
                     },

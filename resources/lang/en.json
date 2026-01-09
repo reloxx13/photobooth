@@ -781,6 +781,7 @@
   "manual:userinterface:colors_primary_light": "Light variant of the primary color.",
   "manual:userinterface:colors_secondary": "Secondary accent color.",
   "manual:userinterface:colors_start_font": "Font color on the start screen.",
+  "manual:userinterface:colors_status_bar": "Color used for the browser/status bar (theme-color) on mobile.",
   "manual:userinterface:icons_admin": "Defines the icon class used for the admin button.",
   "manual:userinterface:icons_admin_back": "Defines the icon class used for the back button in the admin panel.",
   "manual:userinterface:icons_admin_back_short": "Defines the icon class used for the short back button in the admin panel.",

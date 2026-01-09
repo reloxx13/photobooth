@@ -1281,14 +1281,12 @@ const photoBooth = (function () {
 
                 let qrCaption = null;
                 const qrResultImage = document.createElement('img');
-                const qrShortText = config.qr.short_text;
-
                 qrResultImage.addEventListener('load', () => {
                     resultPage.append(qrWrapper);
                 });
 
                 qrResultImage.src = environment.publicFolders.api + '/qrcode.php?filename=' + filename;
-                qrResultImage.alt = 'qr code';
+                qrResultImage.alt = 'QR-Code';
                 qrResultImage.classList.add('stage-code__image');
                 qrWrapper.append(qrResultImage);
 

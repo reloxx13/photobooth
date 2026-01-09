@@ -92,6 +92,8 @@
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#how-do-i-change-the-configuration">How do I change the configuration?</a>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#how-do-i-set-up-the-screensaver">How do I set up the screensaver?</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#how-to-change-the-language">How to change the language?</a>
     </li>
     <li class="toctree-l2"><a class="reference internal" href="#how-to-update-or-add-translations">How to update or add translations?</a>
@@ -158,6 +160,8 @@
     </li>
         </ul>
     </li>
+    <li class="toctree-l2"><a class="reference internal" href="#how-do-i-reset-keypad-login-attempts">How do I reset keypad login attempts?</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#how-to-use-magic-greenscreen-ai-background-removal">How to use Magic Greenscreen (AI Background Removal)</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#prerequisites">Prerequisites</a>
@@ -203,6 +207,8 @@
                   <li class="toctree-l1"><a class="reference internal" href="kiosk-mode/">Kiosk mode</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="hide-cursor/">Hide cursor & screen blanking</a>
+                  </li>
+                  <li class="toctree-l1"><a class="reference internal" href="screensaver/">Screensaver</a>
                   </li>
                   <li class="toctree-l1"><a class="reference internal" href="tutorials/">Tutorials</a>
                   </li>
@@ -291,6 +297,9 @@
 <p>Open <a href="http://localhost/admin">http://localhost/admin</a> (
 or <a href="http://localhost/photobooth/admin">http://localhost/photobooth/admin</a>) in your Webbrowser and change the configuration for your personal needs.
 Changed options are stored inside <code>config/my.config.inc.php</code> to prevent sharing personal data on Github by accident and to make an update of Photobooth easier.</p>
+<hr />
+<h2 id="how-do-i-set-up-the-screensaver">How do I set up the screensaver?</h2>
+<p>Use the Admin Panel → General → Screensaver and follow <a href="screensaver/">Screensaver function</a> for modes, file locations, and timing tips.</p>
 <hr />
 <h2 id="how-to-change-the-language">How to change the language?</h2>
 <p>Open <a href="http://localhost/admin">http://localhost/admin</a> (
@@ -641,6 +650,17 @@ or <a href="http://localhost/photobooth/admin/upload">http://localhost/photoboot
 <li>Same thing can be applied for collage_placeholderpath so a random holder image takes place.</li>
 <li>You can specify a diffrent {FrameFolder} for collage frames if needed.</li>
 </ul>
+<hr />
+<h2 id="how-do-i-reset-keypad-login-attempts">How do I reset keypad login attempts?</h2>
+<p>If the keypad is blocked after too many wrong PINs, clear the throttle file to reset attempts:</p>
+<ol>
+<li>Open a shell on the photobooth host.</li>
+<li>Delete the throttle JSON that stores attempt counts:</li>
+</ol>
+<p>Path may vary based on your installation:</p>
+<p><code>rm /var/www/html/photobooth/var/run/login_throttle.json</code></p>
+<p>or</p>
+<p><code>rm /var/www/html/var/run/login_throttle.json</code></p>
 <hr />
 <h2 id="how-to-use-magic-greenscreen-ai-background-removal">How to use Magic Greenscreen (AI Background Removal)</h2>
 <p>Magic Greenscreen is a feature that uses AI to automatically remove backgrounds from photos, creating professional-looking images with transparent or custom backgrounds. This feature is powered by the rembg library and requires Python 3.</p>
