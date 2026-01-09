@@ -203,9 +203,10 @@ function initPhotoSwipeFromDOM(gallerySelector) {
 
                                 const qrShortText = config.qr.short_text;
                                 if (qrShortText && qrShortText.length > 0) {
-                                    qrCaption = document.createElement('p');
+                                    const qrCaption = document.createElement('p');
                                     qrCaption.classList.add('pswp-qrcode__caption');
                                     qrCaption.textContent = qrShortText;
+                                    qrWrapper.append(qrCaption);
                                 }
                             });
                         }

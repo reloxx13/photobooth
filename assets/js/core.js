@@ -1279,7 +1279,6 @@ const photoBooth = (function () {
                 qrWrapper.id = 'resultQR';
                 qrWrapper.setAttribute('class', 'stage-code ' + config.qr.result);
 
-                let qrCaption = null;
                 const qrResultImage = document.createElement('img');
                 qrResultImage.addEventListener('load', () => {
                     resultPage.append(qrWrapper);
@@ -1290,10 +1289,12 @@ const photoBooth = (function () {
                 qrResultImage.classList.add('stage-code__image');
                 qrWrapper.append(qrResultImage);
 
+                const qrShortText = config.qr.short_text;
                 if (qrShortText && qrShortText.length > 0) {
-                    qrCaption = document.createElement('p');
+                    const qrCaption = document.createElement('p');
                     qrCaption.classList.add('stage-code__caption');
                     qrCaption.textContent = qrShortText;
+                    qrWrapper.append(qrCaption);
                 }
             }
 
