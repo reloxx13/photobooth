@@ -457,6 +457,7 @@ return [
                 'fa-light fa-champagne-glasses' => 'Champagne glasses',
                 'fa-gears' => 'Gears',
                 'fa-users' => 'People',
+                'fa-solid fa-sun' => 'Sun',
             ],
             'data-theme-field' => 'true',
             'value' => $config['event']['symbol'],
