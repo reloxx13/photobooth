@@ -1,5 +1,5 @@
 /* eslint n/no-unsupported-features/node-builtins: "off" */
-/* globals photoBooth photoboothTools csrf */
+/* globals photoBooth photoboothTools */
 
 function getPreviewUrlWithCacheBusting() {
     const url = getBasePreviewUrl();
