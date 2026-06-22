@@ -122,35 +122,7 @@ const photoBooth = (function () {
         if (filternav.hasClass('sidenav--open')) {
             return;
         }
-
-        const preferredButtonsByStyle = {
-            [PhotoStyle.PHOTO]: ['newpic', 'printbtn', 'gallerybtn', 'mailbtn', 'qrbtn', 'deletebtn', 'homebtn'],
-            [PhotoStyle.COLLAGE]: ['newcollage', 'printbtn', 'gallerybtn', 'mailbtn', 'qrbtn', 'deletebtn', 'homebtn'],
-            [PhotoStyle.CUSTOM]: ['newcustom', 'printbtn', 'gallerybtn', 'mailbtn', 'qrbtn', 'deletebtn', 'homebtn'],
-            [PhotoStyle.CHROMA]: ['newcustom', 'printbtn', 'gallerybtn', 'mailbtn', 'qrbtn', 'deletebtn', 'homebtn'],
-            [PhotoStyle.VIDEO]: ['newvideo', 'gallerybtn', 'mailbtn', 'qrbtn', 'deletebtn', 'homebtn']
-        };
-        const preferredButtons = preferredButtonsByStyle[api.photoStyle] || [];
-
-        let focusTarget = $();
-        preferredButtons.some((command) => {
-            const candidate = resultPage.find(`[data-command="${command}"]`).filter(':visible').first();
-            if (!candidate.length) {
-                return false;
-            }
-
-            focusTarget = candidate;
-            return true;
-        });
-
-        if (!focusTarget.length) {
-            focusTarget = resultPage.find('.rotaryfocus:visible').first();
-        }
-
-        rotaryController.focusRemove();
-        if (focusTarget.length) {
-            focusTarget.addClass('focused');
-        }
+        rotaryController.focusSet(resultPage);
     };
 
     api.reset = function () {
