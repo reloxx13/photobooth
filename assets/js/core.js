@@ -118,6 +118,41 @@ const photoBooth = (function () {
         }
     };
 
+    api.focusResultAction = function () {
+        if (filternav.hasClass('sidenav--open')) {
+            return;
+        }
+
+        const preferredButtonsByStyle = {
+            [PhotoStyle.PHOTO]: ['newpic', 'printbtn', 'gallerybtn', 'mailbtn', 'qrbtn', 'deletebtn', 'homebtn'],
+            [PhotoStyle.COLLAGE]: ['newcollage', 'printbtn', 'gallerybtn', 'mailbtn', 'qrbtn', 'deletebtn', 'homebtn'],
+            [PhotoStyle.CUSTOM]: ['newcustom', 'printbtn', 'gallerybtn', 'mailbtn', 'qrbtn', 'deletebtn', 'homebtn'],
+            [PhotoStyle.CHROMA]: ['newcustom', 'printbtn', 'gallerybtn', 'mailbtn', 'qrbtn', 'deletebtn', 'homebtn'],
+            [PhotoStyle.VIDEO]: ['newvideo', 'gallerybtn', 'mailbtn', 'qrbtn', 'deletebtn', 'homebtn']
+        };
+        const preferredButtons = preferredButtonsByStyle[api.photoStyle] || [];
+
+        let focusTarget = $();
+        preferredButtons.some((command) => {
+            const candidate = resultPage.find(`[data-command="${command}"]`).filter(':visible').first();
+            if (!candidate.length) {
+                return false;
+            }
+
+            focusTarget = candidate;
+            return true;
+        });
+
+        if (!focusTarget.length) {
+            focusTarget = resultPage.find('.rotaryfocus:visible').first();
+        }
+
+        rotaryController.focusRemove();
+        if (focusTarget.length) {
+            focusTarget.addClass('focused').trigger('focus');
+        }
+    };
+
     api.reset = function () {
         loader.css('--stage-background', 'var(--background-countdown-color)');
         loader.removeClass('stage--active');
@@ -1150,7 +1185,7 @@ const photoBooth = (function () {
 
         const chromaimage = environment.publicFolders.keying + '/' + filename;
         processChromaImage(chromaimage, true, filename);
-        rotaryController.focusSet(resultPage);
+        api.focusResultAction();
 
         api.takingPic = false;
         remoteBuzzerClient.inProgress(false);
@@ -1395,9 +1430,7 @@ const photoBooth = (function () {
                 }
             }
 
-            if (!filternav.hasClass('sidenav--open')) {
-                rotaryController.focusSet(resultPage);
-            }
+            api.focusResultAction();
         };
 
         preloadImage.src = imageUrl;
@@ -1622,7 +1655,7 @@ const photoBooth = (function () {
     $('[data-command="sidenav-close"]').on('click', function (e) {
         e.preventDefault();
         api.navbar.close();
-        rotaryController.focusSet(resultPage);
+        api.focusResultAction();
     });
 
     $('.gallery-button, .gallerybtn').on('click', function (e) {
@@ -1649,9 +1682,7 @@ const photoBooth = (function () {
     });
 
     resultPage.on('click', function () {
-        if (!filternav.hasClass('sidenav--open')) {
-            rotaryController.focusSet(resultPage);
-        }
+        api.focusResultAction();
     });
 
     $('.homebtn').on('click', function (e) {
