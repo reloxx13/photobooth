@@ -149,7 +149,7 @@ const photoBooth = (function () {
 
         rotaryController.focusRemove();
         if (focusTarget.length) {
-            focusTarget.addClass('focused').trigger('focus');
+            focusTarget.addClass('focused');
         }
     };
 
