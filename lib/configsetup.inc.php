@@ -1923,6 +1923,18 @@ return [
     ],
     'print' => [
         'view' => 'basic',
+        'printer' => [
+            'view' => 'basic',
+            'platform' => 'linux',
+            'type' => 'select',
+            'name' => 'print[printer]',
+            'value' => $config['print']['printer'],
+            'options' => [
+                '' => $languageService->translate('print_printer_custom'),
+                'Canon' => 'Canon',
+                'DNP' => 'DNP',
+            ],
+        ],
         'button_show_cups' => [
             'view' => 'advanced',
             'type' => 'checkbox',

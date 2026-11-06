@@ -4,6 +4,18 @@
 
 Informative read about Dye-Sublimation Photo Printers and Linux can be found at [Peachy Photos Blog](https://www.peachyphotos.com/blog/stories/dye-sublimation-photo-printers-and-linux/)
 
+## Select a printer for an event
+
+On Linux, select **Printer** in the admin panel's **Printing** section and save:
+
+- **Canon** or **DNP** uses the CUPS queue named exactly `Canon` or `DNP`.
+- **Use configured print command** preserves the command under **Commands**. This is the default for existing installations and other printers/platforms.
+
+The presets use `lp` in landscape orientation, support multiple copies, and use
+paper and color defaults from CUPS. They override the configured print command
+without changing it. Install the queues first; this selection does not create or
+rename printers. Photobooth's crop and frame settings remain unchanged.
+
 ## Printing on Linux with USB Printers
 
 If your printer is connected via **USB**, you’ll need local drivers for it to work.

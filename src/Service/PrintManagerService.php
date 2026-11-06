@@ -185,6 +185,16 @@ class PrintManagerService
         }
     }
 
+    public static function getPrintCommand(string $printer, string $customCommand, bool $multipleCopies): string
+    {
+        return match ($printer) {
+            '' => $customCommand,
+            'Canon', 'DNP' => 'lp -d ' . escapeshellarg($printer) . ' -o landscape '
+                . ($multipleCopies ? '-n %d ' : '') . '%s',
+            default => throw new \InvalidArgumentException('Unknown printer.'),
+        };
+    }
+
     public static function getInstance(): self
     {
         if (!isset($GLOBALS[self::class])) {
