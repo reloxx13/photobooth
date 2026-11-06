@@ -105,6 +105,10 @@ if (is_file($mailDb)) {
 $printManager = PrintManagerService::getInstance();
 $printDbCount = $printManager->getPrintCountFromDB() ?? 0;
 $languageService = LanguageService::getInstance();
+$printers = PrintManagerService::getPrinters();
+if ($config['print']['printer'] !== '') {
+    $printers[$config['print']['printer']] = $config['print']['printer'];
+}
 
 $normalizeLayoutValue = static function ($value): string {
     return $value instanceof \BackedEnum ? (string) $value->value : (string) $value;
@@ -1929,11 +1933,7 @@ return [
             'type' => 'select',
             'name' => 'print[printer]',
             'value' => $config['print']['printer'],
-            'options' => [
-                '' => $languageService->translate('print_printer_custom'),
-                'Canon' => 'Canon',
-                'DNP' => 'DNP',
-            ],
+            'options' => ['' => $languageService->translate('print_printer_custom')] + $printers,
         ],
         'button_show_cups' => [
             'view' => 'advanced',

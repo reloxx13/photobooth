@@ -225,14 +225,15 @@ class AdminInput
             }
 
             $selected = '';
-            if ((is_array($setting['value']) && in_array($optionValue, $setting['value'])) || $optionValue === $setting['value']) {
+            if ((is_array($setting['value']) && in_array($optionValue, $setting['value'])) || $optionValue === $setting['value']
+                || (is_int($optionValue) && is_string($setting['value']) && (string) $optionValue === $setting['value'])) {
                 $selected = ' selected="selected"';
             }
             $styles = '';
             if ($settingName === 'text_font_family') {
                 $styles = 'style="font-family:' . $optionLabel . '"';
             }
-            $options .= '<option ' . $selected . ' value="' . ($optionValue instanceof \BackedEnum ? $optionValue->value : $optionValue) . '"' . $styles . '>' . $optionLabel . '</option>';
+            $options .= '<option ' . $selected . ' value="' . htmlspecialchars((string) ($optionValue instanceof \BackedEnum ? $optionValue->value : $optionValue), ENT_QUOTES) . '"' . $styles . '>' . htmlspecialchars((string) $optionLabel, ENT_QUOTES) . '</option>';
         }
 
         return self::renderHeadline($label) . '
