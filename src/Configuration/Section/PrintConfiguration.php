@@ -12,6 +12,7 @@ final class PrintConfiguration
         return (new TreeBuilder('print'))->getRootNode()->addDefaultsIfNotSet()
             ->ignoreExtraKeys()
             ->children()
+                ->enumNode('printer')->values(['', 'Canon', 'DNP'])->defaultValue('')->end()
                 ->booleanNode('from_result')->defaultValue(false)->end()
                 ->booleanNode('from_gallery')->defaultValue(false)->end()
                 ->booleanNode('from_chromakeying')->defaultValue(false)->end()

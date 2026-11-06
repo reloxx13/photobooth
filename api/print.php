@@ -235,15 +235,21 @@ if (!file_exists($vars['printFile'])) {
 // print image
 $status = 'ok';
 
+$printCommand = PrintManagerService::getPrintCommand(
+    $config['print']['printer'],
+    $config['commands']['print'],
+    $config['print']['max_multi'] > 1
+);
+
 if ($config['print']['max_multi'] > 1) {
     $cmd = sprintf(
-        $config['commands']['print'],
+        $printCommand,
         (int) $vars['copies'],
         escapeshellarg($vars['printFile'])
     );
 } else {
     $cmd = sprintf(
-        $config['commands']['print'],
+        $printCommand,
         escapeshellarg($vars['printFile'])
     );
 }
