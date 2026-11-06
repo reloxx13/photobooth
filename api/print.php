@@ -235,11 +235,16 @@ if (!file_exists($vars['printFile'])) {
 // print image
 $status = 'ok';
 
-$printCommand = PrintManagerService::getPrintCommand(
-    $config['print']['printer'],
-    $config['commands']['print'],
-    $config['print']['max_multi'] > 1
-);
+try {
+    $printCommand = PrintManagerService::getPrintCommand(
+        $config['print']['printer'],
+        $config['commands']['print']
+    );
+} catch (\InvalidArgumentException $e) {
+    $logger->error($e->getMessage());
+    echo json_encode(['status' => 'error', 'error' => $e->getMessage()]);
+    die();
+}
 
 if ($config['print']['max_multi'] > 1) {
     $cmd = sprintf(

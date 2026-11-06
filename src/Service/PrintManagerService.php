@@ -3,6 +3,7 @@
 namespace Photobooth\Service;
 
 use Photobooth\Enum\FolderEnum;
+use Photobooth\Environment;
 
 class PrintManagerService
 {
@@ -185,14 +186,32 @@ class PrintManagerService
         }
     }
 
-    public static function getPrintCommand(string $printer, string $customCommand, bool $multipleCopies): string
+    public static function getPrinters(): array
     {
-        return match ($printer) {
-            '' => $customCommand,
-            'Canon', 'DNP' => 'lp -d ' . escapeshellarg($printer) . ' -o landscape '
-                . ($multipleCopies ? '-n %d ' : '') . '%s',
-            default => throw new \InvalidArgumentException('Unknown printer.'),
-        };
+        if (Environment::getOperatingSystem() !== 'linux') {
+            return [];
+        }
+
+        exec('LC_ALL=C lpstat -p 2>/dev/null', $output, $status);
+        if ($status !== 0) {
+            return [];
+        }
+
+        preg_match_all('/^printer (\S+) /m', implode("\n", $output), $matches);
+        return array_combine($matches[1], $matches[1]);
+    }
+
+    public static function getPrintCommand(string $printer, string $command): string
+    {
+        if (!str_contains($command, '{printer}')) {
+            return $command;
+        }
+        if ($printer === '') {
+            throw new \InvalidArgumentException('Select a printer for the {printer} placeholder.');
+        }
+
+        // sprintf still processes the filename and copy placeholders afterwards.
+        return str_replace('{printer}', str_replace('%', '%%', escapeshellarg($printer)), $command);
     }
 
     public static function getInstance(): self

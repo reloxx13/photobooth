@@ -6,15 +6,27 @@ Informative read about Dye-Sublimation Photo Printers and Linux can be found at 
 
 ## Select a printer for an event
 
-On Linux, select **Printer** in the admin panel's **Printing** section and save:
+On Linux, the **Printer** selection in the admin panel's **Printing** section
+lists the queues currently installed in CUPS (`lpstat -p`). It does not create
+or rename printers. The saved selection remains available if CUPS cannot be
+queried or the queue has temporarily been removed.
 
-- **Canon** or **DNP** uses the CUPS queue named exactly `Canon` or `DNP`.
-- **Use configured print command** preserves the command under **Commands**. This is the default for existing installations and other printers/platforms.
+Under **Commands**, use the unquoted `{printer}` placeholder in the print command:
 
-The presets use `lp` in landscape orientation, support multiple copies, and use
-paper and color defaults from CUPS. They override the configured print command
-without changing it. Install the queues first; this selection does not create or
-rename printers. Photobooth's crop and frame settings remain unchanged.
+```sh
+lp -d {printer} -o landscape %s
+```
+
+For multiple copies (`max_multi` greater than 1), keep the copy placeholder first:
+
+```sh
+lp -d {printer} -o landscape -n %d %s
+```
+
+Select the desired printer and save. The queue name is inserted as a shell-escaped
+argument; paper and color defaults remain in CUPS. Commands without `{printer}`
+continue working unchanged. A command containing `{printer}` requires a selection.
+Photobooth's crop and frame settings remain unchanged.
 
 ## Printing on Linux with USB Printers
 
